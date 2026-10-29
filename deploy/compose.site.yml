@@ -1,6 +1,9 @@
 # Adds the website to the existing Kadjoe server stack (/srv/kadjoe, which already runs Caddy on the
-# `web` network). Use with: docker compose -f compose.yml -f compose.site.yml up -d site
+# `web` network). Add it to COMPOSE_FILE in /srv/kadjoe/.env, or deploy.sh's --remove-orphans deletes the site.
 services:
+  caddy:
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN (e.g. kadjoe.com) in .env}
   site:
     image: ${SITE_IMAGE:?set SITE_IMAGE (kadjoe-site:<git sha>) in .env}
     pull_policy: never
