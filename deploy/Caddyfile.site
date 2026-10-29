@@ -1,0 +1,12 @@
+# Add to the server's Caddyfile; Caddy fetches the certificate once DNS points here.
+{$SITE_DOMAIN} {
+	request_body {
+		max_size 40MB
+	}
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	reverse_proxy site:3200
+}

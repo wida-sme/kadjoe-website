@@ -39,3 +39,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# site data: database, media and caches never enter git
+/data/
+*.db
+*.db-shm
+*.db-wal
+# QA output
+/.shots/
+/.jury/
+/test-results/
+# local scratch
+/tmp/
+
+# bundled CLI scripts (built in the image)
+/dist/

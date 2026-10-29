@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Bundled CLI output and QA artefacts
+    "dist/**",
+    ".shots/**",
   ]),
 ]);
 

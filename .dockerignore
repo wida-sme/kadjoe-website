@@ -1,0 +1,15 @@
+# Data, databases and photographs never reach the image builder.
+**/node_modules
+.next
+dist
+out
+data
+tmp
+.shots
+**/*.db*
+**/*.sqlite*
+**/*.pdf
+**/*.zip
+**/.env*
+.git
+.claude

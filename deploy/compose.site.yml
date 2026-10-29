@@ -1,0 +1,20 @@
+# Adds the website to the existing Kadjoe server stack (/srv/kadjoe, which already runs Caddy on the
+# `web` network). Use with: docker compose -f compose.yml -f compose.site.yml up -d site
+services:
+  site:
+    image: ${SITE_IMAGE:?set SITE_IMAGE (kadjoe-site:<git sha>) in .env}
+    pull_policy: never
+    restart: unless-stopped
+    init: true
+    environment:
+      SITE_URL: ${SITE_URL:?set SITE_URL in .env}
+      IG_APP_ID: ${IG_APP_ID:-}
+      IG_APP_SECRET: ${IG_APP_SECRET:-}
+    volumes:
+      - ${KADJOE_SITE_HOST_DATA:-/srv/kadjoe/site-data}:/data
+    networks: [web]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }

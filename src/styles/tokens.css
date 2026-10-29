@@ -1,0 +1,59 @@
+/* Kadjoe design tokens. Names are the contract the engine and components use; values come from
+   DESIGN.md (drawing sheet: paper, graphite, hairlines; the photographs bring the colour). */
+
+:root {
+  /* Colour, by role */
+  --c-bg: #f4f4f2;          /* paper */
+  --c-fg: #1c1b1a;          /* graphite ink */
+  --c-muted: #6a6762;       /* 5.1:1 on paper */
+  --c-line: rgb(28 27 26 / 0.16);
+  --c-line-strong: rgb(28 27 26 / 0.34);
+  --c-sheet: #1c1b1a;       /* divider sheets: curtain, loader, footer */
+  --c-on-sheet: #ededea;
+  --c-on-sheet-muted: #a09c96;
+  --c-sheet-line: rgb(237 237 234 / 0.2);
+  --c-photo: #dcdbd7;       /* frame colour while a photograph loads */
+  --c-accent: var(--c-fg);
+  --c-curtain: var(--c-sheet);
+
+  /* Type */
+  --f-sans: var(--font-switzer), 'Helvetica Neue', Arial, sans-serif;
+  --f-mono: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  --t-mega: clamp(3.5rem, 1rem + 11vw, 13rem);
+  --t-xl: clamp(2.5rem, 1.2rem + 4.4vw, 5.75rem);
+  --t-l: clamp(1.5rem, 1.15rem + 1.4vw, 2.5rem);
+  --t-m: clamp(1.125rem, 1.05rem + 0.35vw, 1.375rem);
+  --t-body: clamp(1rem, 0.96rem + 0.18vw, 1.125rem);
+  --t-s: 0.875rem;
+  --t-xs: 0.8125rem;
+  --t-label: 0.6875rem;     /* 11 px title-block lettering */
+
+  /* Space */
+  --gutter: clamp(16px, 2vw, 32px);
+  --u: clamp(0.5rem, 0.35rem + 0.6vw, 1rem);
+  --header-h: 64px;
+  --reveal: clamp(6px, 0.6vw, 10px); /* the shadow gap between photographs */
+  --sec-airy: clamp(112px, 15vw, 240px);
+  --sec: clamp(80px, 10vw, 160px);
+  --sec-tight: clamp(48px, 6vw, 88px);
+
+  /* Shape: drawn, not rounded */
+  --radius: 0px;
+
+  /* Motion ("slide on the rule and lock") */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.87, 0, 0.13, 1);
+
+  /* Layers */
+  --z-content: 1;
+  --z-preview: 40;
+  --z-header: 50;
+  --z-menu: 60;
+  --z-lightbox: 70;
+  --z-curtain: 90;
+  --z-loader: 100;
+}
+
+@media (max-width: 767px) {
+  :root { --header-h: 56px; }
+}
