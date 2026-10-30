@@ -1,7 +1,7 @@
 // Bundles the command-line scripts the container runs without a TypeScript toolchain.
 import { build } from 'esbuild';
 
-for (const name of ['migrate', 'create-admin']) {
+for (const name of ['migrate']) {
   await build({
     entryPoints: [`scripts/${name}.ts`],
     outfile: `dist/${name}.mjs`,

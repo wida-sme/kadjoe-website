@@ -11,6 +11,8 @@ services:
     init: true
     environment:
       SITE_URL: ${SITE_URL:?set SITE_URL in .env}
+      SITE_ADMIN_TOKEN: ${SITE_ADMIN_TOKEN:?set SITE_ADMIN_TOKEN in .env}
+      FINANCE_URL: ${FINANCE_URL:?set FINANCE_URL in .env}
       IG_APP_ID: ${IG_APP_ID:-}
       IG_APP_SECRET: ${IG_APP_SECRET:-}
     volumes:

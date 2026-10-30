@@ -8,5 +8,8 @@
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		-Server
 	}
+	# Only the finance app calls the internal API, over the docker network; never from the internet.
+	@internal path /api/internal/*
+	respond @internal 404
 	reverse_proxy site:3200
 }

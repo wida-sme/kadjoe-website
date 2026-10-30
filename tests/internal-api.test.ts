@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import sharp from 'sharp';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kadjoe-internal-'));
 process.env.KADJOE_SITE_DATA_DIR = dir;
@@ -126,9 +126,13 @@ describe('internal api', () => {
       expect((await callback(`?code=c&state=${state}`)).headers.get('location')).toBe('https://fin.test/website/instagram?error=state');
     });
 
-    it('falls back to /admin/instagram without FINANCE_URL', async () => {
+    it('answers 500 without FINANCE_URL', async () => {
       delete process.env.FINANCE_URL;
-      expect(new URL((await callback('?code=c&state=x')).headers.get('location')!).pathname).toBe('/admin/instagram');
+      const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const r = await callback('?code=c&state=x');
+      expect(r.status).toBe(500);
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('FINANCE_URL'));
+      log.mockRestore();
     });
   });
 });

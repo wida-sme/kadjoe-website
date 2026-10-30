@@ -7,8 +7,12 @@ const TEN_MIN = 10 * 60_000;
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  // No FINANCE_URL yet: fall back to the old /admin page so it keeps working until it is removed.
-  const back = (q: string) => NextResponse.redirect(process.env.FINANCE_URL ? `${process.env.FINANCE_URL.replace(/\/$/, '')}/website/instagram?${q}` : new URL(`/admin/instagram?${q}`, url));
+  const finance = process.env.FINANCE_URL;
+  if (!finance) {
+    console.error('instagram callback: FINANCE_URL is not set, cannot send the user back to the finance app');
+    return new Response('Server misconfigured', { status: 500 });
+  }
+  const back = (q: string) => NextResponse.redirect(`${finance.replace(/\/$/, '')}/website/instagram?${q}`);
   const { oauthState: state, oauthStateAt } = getInstagram();
   setInstagram({ oauthState: null, oauthStateAt: null }); // single use
   const fresh = !!oauthStateAt && Date.now() - Date.parse(oauthStateAt) < TEN_MIN;

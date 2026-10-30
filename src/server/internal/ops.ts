@@ -11,15 +11,12 @@ import { approvePost, ignorePosts, inbox, recentPosts, runSync } from '../instag
 import { candidatesFor, defaultConfig } from '../profile/build';
 import { clientsSchema, contactSchema, getClients, getContact, getInstagram, setInstagram, write as writeSetting } from '../settings';
 
-// Everything the dashboard can read or change, as plain functions. The HTTP route and the legacy
-// /admin server actions both call these; the callers own sign-in, caching and wording.
+// Everything the finance app can read or change, as plain functions behind /api/internal/[op].
 
 export type ErrorCode = 'invalid' | 'not_found' | 'duplicate_handle' | 'no_selection' | 'instagram_refused' | 'instagram_unreachable' | 'import_failed' | 'failed';
-// `detail` is the old English message, kept only so /admin can show what it always showed; the route drops it.
+// `detail` is the English reason the old /admin showed; the route sends only the code.
 export type OpResult = { ok: true; id?: string; message?: string; added?: number; skipped?: number } | { ok: false; code: ErrorCode; detail?: string };
 const fail = (code: ErrorCode, detail?: string): OpResult => ({ ok: false, code, detail });
-/** Shape the old dashboard actions return: the English message instead of a code. */
-export const legacy = (r: OpResult) => (r.ok ? r : { ok: false as const, error: r.detail ?? 'Something went wrong' });
 const first = (e: z.ZodError, fallback: string) => fail('invalid', e.issues[0]?.message ?? fallback);
 
 const text = (max: number) => z.string().trim().max(max).transform((v) => v || null).nullable();
