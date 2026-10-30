@@ -16,7 +16,7 @@ import { clientsSchema, contactSchema, getClients, getContact, getInstagram, set
 
 export type ErrorCode = 'invalid' | 'not_found' | 'duplicate_handle' | 'no_selection' | 'instagram_refused' | 'instagram_unreachable' | 'import_failed' | 'failed';
 // `detail` is the old English message, kept only so /admin can show what it always showed; the route drops it.
-export type OpResult = { ok: true; id?: string; message?: string } | { ok: false; code: ErrorCode; detail?: string };
+export type OpResult = { ok: true; id?: string; message?: string; added?: number; skipped?: number } | { ok: false; code: ErrorCode; detail?: string };
 const fail = (code: ErrorCode, detail?: string): OpResult => ({ ok: false, code, detail });
 /** Shape the old dashboard actions return: the English message instead of a code. */
 export const legacy = (r: OpResult) => (r.ok ? r : { ok: false as const, error: r.detail ?? 'Something went wrong' });
@@ -199,7 +199,7 @@ export const WRITE: Record<string, (body: unknown | FormData) => Promise<OpResul
         if (id) added++; else skipped++;
       } catch { skipped++; }
     }
-    return { ok: true, message: skipped ? `${added} added, ${skipped} skipped` : `${added} added` };
+    return { ok: true, added, skipped, message: skipped ? `${added} added, ${skipped} skipped` : `${added} added` };
   },
 
   'hero.op': async (b) => {

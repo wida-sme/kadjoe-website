@@ -76,7 +76,7 @@ describe('internal api', () => {
     form.set('projectId', created.id);
     form.append('files', new File([new Uint8Array(jpeg)], 'a.jpg', { type: 'image/jpeg' }));
     const r = await post('photos.upload', form);
-    expect(await r.json()).toMatchObject({ ok: true });
+    expect(await r.json()).toMatchObject({ ok: true, added: 1, skipped: 0 });
     const got = await (await get('project.get', `?id=${created.id}`)).json();
     expect(got.photos).toHaveLength(1);
     expect((await get('project.get', '?id=missing')).status).toBe(404);
