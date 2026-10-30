@@ -16,6 +16,7 @@ export async function GET(req: Request, { params }: Ctx) {
   const { op } = await params;
   const url = new URL(req.url);
 
+  try {
   if (op === 'profile.pdf') {
     let raw: unknown;
     try { raw = JSON.parse(Buffer.from(url.searchParams.get('c') ?? '', 'base64url').toString('utf8')); } catch { return bad('invalid'); }
@@ -35,6 +36,10 @@ export async function GET(req: Request, { params }: Ctx) {
   if (!has(READ, op)) return bad('not_found', 404);
   const data = READ[op](url.searchParams);
   return data === null ? bad('not_found', 404) : json(data);
+  } catch (e) {
+    console.error(`internal ${op}`, e);
+    return bad('failed', 500);
+  }
 }
 
 export async function POST(req: Request, { params }: Ctx) {

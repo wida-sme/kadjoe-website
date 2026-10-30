@@ -1,19 +1,19 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { site } from '@/content/site';
-import { getUser } from '@/server/auth';
 import { exchangeCode, getMe } from '@/server/instagram/api';
-import { setInstagram } from '@/server/settings';
+import { getInstagram, setInstagram } from '@/server/settings';
+
+const TEN_MIN = 10 * 60_000;
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const back = (q: string) => NextResponse.redirect(new URL(`/admin/instagram?${q}`, url));
-  if (!(await getUser())) return NextResponse.redirect(new URL('/admin/login', url));
-  const jar = await cookies();
-  const state = jar.get('kadjoe_ig_state')?.value;
-  jar.delete('kadjoe_ig_state');
+  // No FINANCE_URL yet: fall back to the old /admin page so it keeps working until it is removed.
+  const back = (q: string) => NextResponse.redirect(process.env.FINANCE_URL ? `${process.env.FINANCE_URL.replace(/\/$/, '')}/website/instagram?${q}` : new URL(`/admin/instagram?${q}`, url));
+  const { oauthState: state, oauthStateAt } = getInstagram();
+  setInstagram({ oauthState: null, oauthStateAt: null }); // single use
+  const fresh = !!oauthStateAt && Date.now() - Date.parse(oauthStateAt) < TEN_MIN;
   const code = url.searchParams.get('code');
-  if (!code || !state || state !== url.searchParams.get('state')) return back('error=state');
+  if (!code || !state || !fresh || state !== url.searchParams.get('state')) return back('error=state');
   try {
     const t = await exchangeCode(process.env.IG_APP_ID!, process.env.IG_APP_SECRET!, `${site.url}/api/instagram/callback`, code);
     const me = await getMe(t.token);

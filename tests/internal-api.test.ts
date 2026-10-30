@@ -81,4 +81,54 @@ describe('internal api', () => {
     expect(got.photos).toHaveLength(1);
     expect((await get('project.get', '?id=missing')).status).toBe(404);
   });
+
+  it('returns 500 failed when a read throws', async () => {
+    const { READ } = await import('@/server/internal/ops');
+    READ.boom = () => { throw new Error('x'); };
+    const err = console.error; console.error = () => {};
+    const r = await get('boom');
+    console.error = err; delete READ.boom;
+    expect(r.status).toBe(500);
+    expect(await r.json()).toEqual({ ok: false, code: 'failed' });
+  });
+
+  describe('instagram connect', () => {
+    const callback = async (qs: string) => {
+      const { GET } = await import('@/app/api/instagram/callback/route');
+      return GET(new Request(`http://x/api/instagram/callback${qs}`));
+    };
+    const settings = () => import('@/server/settings');
+
+    it('refuses without the Meta app keys', async () => {
+      delete process.env.IG_APP_ID; delete process.env.IG_APP_SECRET;
+      const r = await post('instagram.authorizeUrl', {});
+      expect(r.status).toBe(400);
+      expect(await r.json()).toEqual({ ok: false, code: 'invalid' });
+    });
+
+    it('stores the state it puts in the authorize URL', async () => {
+      process.env.IG_APP_ID = 'app'; process.env.IG_APP_SECRET = 'secret';
+      const j = await (await post('instagram.authorizeUrl', {})).json();
+      const state = new URL(j.message).searchParams.get('state');
+      expect(state).toBeTruthy();
+      expect((await settings()).getInstagram().oauthState).toBe(state);
+    });
+
+    it('sends a callback with a wrong, stale or missing state back to the finance app', async () => {
+      process.env.FINANCE_URL = 'https://fin.test';
+      const { getInstagram, setInstagram } = await settings();
+      const state = getInstagram().oauthState!;
+      const wrong = await callback('?code=c&state=nope');
+      expect(wrong.headers.get('location')).toBe('https://fin.test/website/instagram?error=state');
+      setInstagram({ oauthState: state, oauthStateAt: new Date(Date.now() - 11 * 60_000).toISOString() });
+      expect((await callback(`?code=c&state=${state}`)).headers.get('location')).toBe('https://fin.test/website/instagram?error=state');
+      expect(getInstagram().oauthState).toBeNull(); // used once, whatever the outcome
+      expect((await callback(`?code=c&state=${state}`)).headers.get('location')).toBe('https://fin.test/website/instagram?error=state');
+    });
+
+    it('falls back to /admin/instagram without FINANCE_URL', async () => {
+      delete process.env.FINANCE_URL;
+      expect(new URL((await callback('?code=c&state=x')).headers.get('location')!).pathname).toBe('/admin/instagram');
+    });
+  });
 });

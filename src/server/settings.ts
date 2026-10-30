@@ -47,6 +47,9 @@ export const instagramSchema = z.object({
   autoPublish: z.boolean().default(true),
   lastSyncAt: z.string().nullable().default(null),
   lastError: z.string().nullable().default(null),
+  // Pending OAuth state; there is no website cookie to hold it any more. Valid for 10 minutes, once.
+  oauthState: z.string().nullable().default(null),
+  oauthStateAt: z.string().nullable().default(null),
 });
 export type InstagramState = z.infer<typeof instagramSchema>;
 

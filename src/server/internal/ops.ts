@@ -1,10 +1,12 @@
+import { randomBytes } from 'node:crypto';
 import { and, asc, eq, like, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/client';
 import { CATEGORIES, PROJECT_STATUSES, igPosts, partners, projects } from '../db/schema';
 import * as P from '../admin/projects';
 import * as R from '../admin/partners';
-import { getMe, InstagramError } from '../instagram/api';
+import { site } from '@/content/site';
+import { authorizeUrl, getMe, InstagramError } from '../instagram/api';
 import { approvePost, ignorePosts, inbox, recentPosts, runSync } from '../instagram/sync';
 import { candidatesFor, defaultConfig } from '../profile/build';
 import { clientsSchema, contactSchema, getClients, getContact, getInstagram, setInstagram, write as writeSetting } from '../settings';
@@ -286,6 +288,15 @@ export const WRITE: Record<string, (body: unknown | FormData) => Promise<OpResul
         ? fail('instagram_refused', `Instagram refused the token: ${e.message}`)
         : fail('instagram_unreachable', 'Could not reach Instagram');
     }
+  },
+
+  /** Starts the OAuth flow; the state lives in settings and is checked once by /api/instagram/callback. */
+  'instagram.authorizeUrl': async () => {
+    const appId = process.env.IG_APP_ID;
+    if (!appId || !process.env.IG_APP_SECRET) return fail('invalid', 'Instagram app is not set up');
+    const state = randomBytes(32).toString('base64url');
+    setInstagram({ oauthState: state, oauthStateAt: new Date().toISOString() });
+    return { ok: true, message: authorizeUrl(appId, `${site.url}/api/instagram/callback`, state) };
   },
 
   'instagram.disconnect': async () => {
