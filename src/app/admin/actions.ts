@@ -5,11 +5,9 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { requireUser, setPassword, signIn, signOut, createUser, verifyPassword } from '@/server/auth';
 import { db } from '@/server/db/client';
-import { CATEGORIES, PROJECT_STATUSES, users } from '@/server/db/schema';
+import { PROJECT_STATUSES, users } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
-import * as P from '@/server/admin/projects';
-import * as R from '@/server/admin/partners';
-import { clientsSchema, contactSchema, write as writeSetting } from '@/server/settings';
+import { legacy, WRITE } from '@/server/internal/ops';
 
 export type ActionResult = { ok: true; id?: string; message?: string } | { ok: false; error: string };
 const fail = (error: string): ActionResult => ({ ok: false, error });
@@ -32,209 +30,119 @@ export async function logoutAction() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Projects
-
-const text = (max: number) => z.string().trim().max(max).transform((v) => v || null).nullable();
-const projectSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required').max(120),
-  slug: z.string().trim().max(90).optional(),
-  category: z.enum(CATEGORIES),
-  typeLabel: text(60),
-  location: text(160),
-  year: text(20),
-  service: text(60),
-  inHouse: z.boolean(),
-  description: text(1200),
-  status: z.enum(PROJECT_STATUSES),
-  featured: z.boolean(),
-  sortDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD'),
-  designers: z.array(z.string()).max(8),
-  photographers: z.array(z.string()).max(8),
-});
+// Projects, hero, partners, settings: thin wrappers over the internal ops until the finance app owns these pages.
 
 export async function saveProjectAction(id: string | null, input: unknown): Promise<ActionResult> {
   await requireUser();
-  const parsed = projectSchema.safeParse(input);
-  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? 'Check the form');
-  if (id) {
-    P.updateProject(id, parsed.data);
-    revalidatePath(`/admin/projects/${id}`);
-    return { ok: true, id, message: 'Saved' };
-  }
-  const newId = P.createProject(parsed.data);
-  revalidatePath('/admin/projects');
-  return { ok: true, id: newId, message: 'Created' };
+  const r = await WRITE['project.save']({ id, input });
+  revalidatePath(id ? `/admin/projects/${id}` : '/admin/projects');
+  return legacy(r);
 }
 
 export async function projectFlagsAction(id: string, patch: { status?: (typeof PROJECT_STATUSES)[number]; featured?: boolean }): Promise<ActionResult> {
   await requireUser();
-  const s = z.object({ status: z.enum(PROJECT_STATUSES).optional(), featured: z.boolean().optional() }).safeParse(patch);
-  if (!s.success) return fail('Invalid change');
-  P.setProjectFlags(id, s.data);
+  const r = await WRITE['project.flags']({ id, patch });
   revalidatePath('/admin/projects');
   revalidatePath(`/admin/projects/${id}`);
-  return { ok: true };
+  return legacy(r);
 }
 
 export async function deleteProjectAction(id: string): Promise<ActionResult> {
   await requireUser();
-  P.deleteProject(id);
+  const r = await WRITE['project.delete']({ id });
   revalidatePath('/admin/projects');
-  return { ok: true };
+  return legacy(r);
 }
-
-const ids = z.array(z.string().regex(/^[A-Za-z0-9_-]{12}$/)).min(1).max(500);
 
 export async function photosAction(projectId: string, op: 'order' | 'cover' | 'hide' | 'show' | 'delete' | 'hero', photoIds: string[]): Promise<ActionResult> {
   await requireUser();
-  const list = ids.safeParse(photoIds);
-  if (!list.success) return fail('Select photographs first');
-  if (op === 'order') P.reorderPhotos(projectId, list.data);
-  else if (op === 'cover') P.setCover(projectId, list.data[0]);
-  else if (op === 'hide') P.setPhotosHidden(projectId, list.data, true);
-  else if (op === 'show') P.setPhotosHidden(projectId, list.data, false);
-  else if (op === 'delete') P.deletePhotos(projectId, list.data);
-  else if (op === 'hero') list.data.forEach(P.addHero);
+  const r = await WRITE['photos.op']({ projectId, op, photoIds });
   revalidatePath(`/admin/projects/${projectId}`);
   if (op === 'hero') revalidatePath('/admin/hero');
-  return { ok: true };
+  return legacy(r);
 }
 
 export async function movePhotosAction(fromId: string, photoIds: string[], toId: string): Promise<ActionResult> {
   await requireUser();
-  const list = ids.safeParse(photoIds);
-  if (!list.success) return fail('Select photographs first');
-  P.movePhotos(fromId, list.data, toId);
+  const r = await WRITE['photos.move']({ fromId, photoIds, toId });
   revalidatePath(`/admin/projects/${fromId}`);
-  return { ok: true, id: toId, message: 'Moved' };
+  return legacy(r);
 }
 
 export async function splitProjectAction(fromId: string, photoIds: string[], name: string): Promise<ActionResult> {
   await requireUser();
-  const list = ids.safeParse(photoIds);
-  const n = z.string().trim().min(1).max(120).safeParse(name);
-  if (!list.success) return fail('Select photographs first');
-  if (!n.success) return fail('Name the new project');
-  const id = P.splitProject(fromId, list.data, n.data);
+  const r = await WRITE['project.split']({ fromId, photoIds, name });
   revalidatePath(`/admin/projects/${fromId}`);
-  return { ok: true, id, message: 'New project created as a draft' };
+  return legacy(r);
 }
 
 export async function mergeProjectAction(fromId: string, intoId: string): Promise<ActionResult> {
   await requireUser();
-  P.mergeProjects(fromId, intoId);
+  const r = await WRITE['project.merge']({ fromId, intoId });
   revalidatePath('/admin/projects');
-  return { ok: true, id: intoId };
+  return legacy(r);
 }
 
 export async function updatePhotoAction(mediaId: string, patch: { alt?: string | null; focalX?: number; focalY?: number }): Promise<ActionResult> {
   await requireUser();
-  const s = z.object({
-    alt: z.string().trim().max(200).transform((v) => v || null).nullable().optional(),
-    focalX: z.number().min(0).max(1).optional(),
-    focalY: z.number().min(0).max(1).optional(),
-  }).safeParse(patch);
-  if (!s.success) return fail('Invalid value');
-  P.updatePhoto(mediaId, s.data);
-  return { ok: true };
+  return legacy(await WRITE['photo.update']({ mediaId, patch }));
 }
 
-const MAX_UPLOAD = 30 * 1024 * 1024;
 export async function uploadPhotosAction(projectId: string, form: FormData): Promise<ActionResult> {
   await requireUser();
-  const files = form.getAll('files').filter((f): f is File => f instanceof File && f.size > 0);
-  if (!files.length) return fail('Choose photographs');
-  let added = 0, skipped = 0;
-  for (const f of files) {
-    if (f.size > MAX_UPLOAD || !/^image\//.test(f.type)) { skipped++; continue; }
-    try {
-      const id = await P.addPhoto(projectId, Buffer.from(await f.arrayBuffer()), { source: 'upload', originalName: f.name });
-      if (id) added++; else skipped++;
-    } catch { skipped++; }
-  }
+  form.set('projectId', projectId);
+  const r = await WRITE['photos.upload'](form);
   revalidatePath(`/admin/projects/${projectId}`);
-  return { ok: true, message: skipped ? `${added} added, ${skipped} skipped` : `${added} added` };
+  return legacy(r);
 }
-
-// ---------------------------------------------------------------------------------------------
-// Hero
 
 export async function heroAction(op: 'add' | 'remove' | 'order', values: string[]): Promise<ActionResult> {
   await requireUser();
-  const list = ids.safeParse(values);
-  if (!list.success) return fail('Nothing selected');
-  if (op === 'add') list.data.forEach(P.addHero);
-  else if (op === 'remove') list.data.forEach(P.removeHero);
-  else P.reorderHero(list.data);
+  const r = await WRITE['hero.op']({ op, values });
   revalidatePath('/admin/hero');
-  return { ok: true };
+  return legacy(r);
 }
 
 export async function featuredOrderAction(values: string[]): Promise<ActionResult> {
   await requireUser();
-  const list = ids.safeParse(values);
-  if (!list.success) return fail('Nothing selected');
-  P.reorderFeatured(list.data);
+  const r = await WRITE['featured.order']({ values });
   revalidatePath('/admin/hero');
-  return { ok: true };
+  return legacy(r);
 }
-
-// ---------------------------------------------------------------------------------------------
-// Partners
-
-const partnerSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required').max(100),
-  kind: z.enum(['design', 'photo']),
-  instagram: z.string().trim().max(80).transform((v) => v || null).nullable(),
-  website: z.union([z.literal(''), z.url()]).transform((v) => v || null).nullable(),
-});
 
 export async function savePartnerAction(id: string | null, input: unknown): Promise<ActionResult> {
   await requireUser();
-  const s = partnerSchema.safeParse(input);
-  if (!s.success) return fail(s.error.issues[0]?.message ?? 'Check the form');
-  try {
-    const pid = id ? (R.updatePartner(id, s.data), id) : R.createPartner(s.data);
-    revalidatePath('/admin/partners');
-    return { ok: true, id: pid, message: 'Saved' };
-  } catch (e) {
-    return fail(String(e).includes('UNIQUE') ? 'That Instagram handle is already used' : 'Could not save');
-  }
+  const r = await WRITE['partner.save']({ id, input });
+  revalidatePath('/admin/partners');
+  return legacy(r);
 }
 
 export async function mergePartnerAction(fromId: string, intoId: string): Promise<ActionResult> {
   await requireUser();
-  R.mergePartners(fromId, intoId);
+  const r = await WRITE['partner.merge']({ fromId, intoId });
   revalidatePath('/admin/partners');
-  return { ok: true };
+  return legacy(r);
 }
 
 export async function deletePartnerAction(id: string): Promise<ActionResult> {
   await requireUser();
-  R.deletePartner(id);
+  const r = await WRITE['partner.delete']({ id });
   revalidatePath('/admin/partners');
-  return { ok: true };
+  return legacy(r);
 }
-
-// ---------------------------------------------------------------------------------------------
-// Settings
 
 export async function saveContactAction(input: unknown): Promise<ActionResult> {
   await requireUser();
-  const s = contactSchema.safeParse(input);
-  if (!s.success) return fail(s.error.issues[0]?.message ?? 'Check the form');
-  writeSetting('contact', s.data);
+  const r = await WRITE['contact.save']({ input });
   revalidatePath('/admin/settings');
-  return { ok: true, message: 'Saved' };
+  return legacy(r);
 }
 
 export async function saveClientsAction(list: string[]): Promise<ActionResult> {
   await requireUser();
-  const s = clientsSchema.safeParse(list.map((x) => x.trim()).filter(Boolean));
-  if (!s.success) return fail('Check the list');
-  writeSetting('clients', s.data);
+  const r = await WRITE['clients.save']({ list });
   revalidatePath('/admin/settings');
-  return { ok: true, message: 'Saved' };
+  return legacy(r);
 }
 
 export async function changePasswordAction(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
