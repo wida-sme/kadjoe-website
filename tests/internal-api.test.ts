@@ -46,6 +46,12 @@ describe('internal api', () => {
     expect((await post('nope', {})).status).toBe(404);
   });
 
+  it('a failed instagram.sync is instagram_unreachable, not failed', async () => {
+    const r = await post('instagram.sync', {});
+    expect(r.ok).toBe(false);
+    expect((await r.json()).code).toBe('instagram_unreachable');
+  });
+
   it('refuses an invalid project and saves a valid one', async () => {
     const r = await post('project.save', { id: null, input: project('') });
     expect(r.status).toBe(400);

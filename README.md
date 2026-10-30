@@ -96,9 +96,12 @@ The image is built like the finance app's (`Dockerfile`, Node 24, runs as `node`
 docker build -t kadjoe-site:$(git rev-parse --short HEAD) .
 ```
 
-On the server, `deploy/compose.site.yml` adds the `site` service to the existing stack and
-`deploy/Caddyfile.site` is the block for Caddy. Environment: `SITE_URL`, `SITE_ADMIN_TOKEN`,
-`FINANCE_URL`, optionally `IG_APP_ID` and `IG_APP_SECRET` (see `.env.example`). The first start
+On the server, copy `deploy/compose.site.yml` and `deploy/Caddyfile.site` to `/srv/kadjoe/site/` and set
+`COMPOSE_FILE=compose.yml:site/compose.site.yml` in `/srv/kadjoe/.env`. The overlay adds the `site` service and
+mounts `Caddyfile.site` at `/etc/caddy/sites/site.caddy`, which the finance app's Caddyfile imports
+(`import /etc/caddy/sites/*.caddy`); then `docker compose up -d caddy site`. Environment, in the shared `.env`:
+`SITE_URL`, `SITE_DOMAIN`, `SITE_IMAGE`, `SITE_ADMIN_TOKEN`, optionally `IG_APP_ID` and `IG_APP_SECRET`;
+`FINANCE_URL` is derived as `https://${DOMAIN}`. The first start
 creates the database; copy a prepared `data/` folder (database + `media/`) into the volume to start
 with the imported projects.
 

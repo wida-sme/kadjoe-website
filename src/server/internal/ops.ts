@@ -265,7 +265,7 @@ export const WRITE: Record<string, (body: unknown | FormData) => Promise<OpResul
 
   'instagram.sync': async () => {
     const r = await runSync('manual');
-    return r.ok ? { ok: true, message: `${r.message}: ${r.imported} imported, ${r.pending} waiting` } : fail('failed', r.message);
+    return r.ok ? { ok: true, message: `${r.message}: ${r.imported} imported, ${r.pending} waiting` } : fail('instagram_unreachable', r.message);
   },
 
   /** For a long-lived token generated in the Meta app dashboard (Instagram > API setup > Generate token). */

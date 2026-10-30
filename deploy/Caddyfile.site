@@ -1,4 +1,5 @@
-# Add to the server's Caddyfile; Caddy fetches the certificate once DNS points here.
+# The website's site block. compose.site.yml mounts it at /etc/caddy/sites/site.caddy, which the finance app's
+# Caddyfile imports; Caddy fetches the certificate once DNS for {$SITE_DOMAIN} points here.
 {$SITE_DOMAIN} {
 	request_body {
 		max_size 40MB
@@ -9,7 +10,7 @@
 		-Server
 	}
 	# Only the finance app calls the internal API, over the docker network; never from the internet.
-	@internal path /api/internal/*
+	@internal path /api/internal /api/internal/*
 	respond @internal 404
 	reverse_proxy site:3200
 }
