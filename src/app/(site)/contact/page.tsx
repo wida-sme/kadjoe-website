@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { site } from '@/content/site';
+import { addressLine } from '@/lib/format';
 import { getContact } from '@/server/settings';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,7 @@ export default function ContactPage() {
         <div className="contact__grid grid12">
           <div className="contact__cell contact__cell--address">
             <span className="label">Office</span>
-            <address>{c.addressLines.map((l) => <span key={l} style={{ display: 'block' }}>{l}</span>)}</address>
+            <address>{c.addressLines.map((l) => <span key={l} style={{ display: 'block' }}>{addressLine(l)}</span>)}</address>
             <a className="arrow-link" href={c.mapsUrl} target="_blank" rel="noopener">Open in Google Maps <span className="arrow" aria-hidden="true">↗</span></a>
           </div>
           <div className="contact__cell contact__cell--ig">

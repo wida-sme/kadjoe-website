@@ -143,11 +143,13 @@ html.frame-away .header { translate: 0 -101%; }
 }
 .hero__strip {
   display: grid;
-  grid-template-columns: minmax(0, 4.4fr) minmax(76px, 0.7fr) minmax(0, 1.8fr) minmax(0, 2fr) minmax(0, 2fr) minmax(76px, 0.7fr) minmax(184px, 1.8fr);
+  grid-template-columns: minmax(0, 4.4fr) minmax(76px, 0.7fr) minmax(0, 1.8fr) minmax(0, 2fr) minmax(0, 2fr) minmax(76px, 0.7fr) minmax(max-content, 1.8fr);
   border-bottom: 1px solid var(--c-line);
 }
 .hero__cell { min-width: 0; padding: 16px 16px 20px; border-left: 1px solid var(--c-line); display: grid; align-content: start; gap: 8px; }
 .hero__cell:first-child { border-left: 0; padding-left: 0; }
+/* The controls and the progress hairline end on the grid line, where the photograph ends. */
+.hero__cell--controls { padding-right: 0; }
 .hero__title { font-size: clamp(1.5rem, 0.95rem + 1.45vw, 2.5rem); font-weight: 300; letter-spacing: -0.028em; line-height: 1.06; max-width: 21ch; }
 .hero__value { display: grid; overflow: clip; font-size: var(--t-s); line-height: 1.35; }
 .hero__value > * { grid-area: 1 / 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-block: 3px; }
@@ -176,7 +178,7 @@ html.frame-away .header { translate: 0 -101%; }
 .hero__progress span { position: absolute; inset: 0; background: var(--c-fg); transform: scaleX(0); transform-origin: left; }
 
 @media (max-width: 1180px) {
-  .hero__strip { grid-template-columns: minmax(0, 3.4fr) minmax(0, 2.2fr) minmax(0, 2.4fr) minmax(190px, 2fr); }
+  .hero__strip { grid-template-columns: minmax(0, 3.4fr) minmax(0, 2.2fr) minmax(0, 2.4fr) minmax(max-content, 2fr); }
   .hero__cell--location, .hero__cell--year, .hero__cell--sheet { display: none; }
 }
 @media (max-width: 767px) {
@@ -396,6 +398,7 @@ html.frame-away .toolbar { top: 0; }
   .tb__cell + .tb__cell { padding-left: 0; border-left: 0; }
   .tb__cell:nth-child(2n) { padding-left: 14px; border-left: 1px solid var(--c-line); }
   .tb__cell--wide { grid-column: 1 / -1; padding-left: 0 !important; border-left: 0 !important; }
+  .tb__cell:nth-child(odd):last-child { grid-column: 1 / -1; } /* alone on its row: the rule runs full width */
 }
 
 .gallery { display: grid; gap: var(--reveal); padding-top: clamp(32px, 4vw, 56px); padding-bottom: var(--sec-tight); }
@@ -485,9 +488,10 @@ html.frame-away .toolbar { top: 0; }
 
 .contact { padding-bottom: var(--sec); }
 .contact__mail { display: inline-block; font-size: clamp(2rem, 1rem + 5.4vw, 6.5rem); font-weight: 300; letter-spacing: -0.04em; line-height: 1; margin-left: -0.05em; position: relative; padding-bottom: 0.1em; overflow-wrap: anywhere; }
-.contact__mail::after { content: ''; position: absolute; left: 0.05em; right: 0; bottom: 0; height: 1px; background: currentColor; transform: scaleX(0.12); transform-origin: left; transition: transform 0.7s var(--ease-out); }
-@media (hover: hover) { .contact__mail:hover::after { transform: scaleX(1); } }
-.contact__mail:focus-visible::after { transform: scaleX(1); }
+/* The address is underlined whole at rest, as a link in prose; the rule thickens under the pointer. */
+.contact__mail::after { content: ''; position: absolute; left: 0.05em; right: 0; bottom: 0; height: 2px; background: currentColor; transform: scaleY(0.5); transform-origin: bottom; transition: transform 0.5s var(--ease-out); }
+@media (hover: hover) { .contact__mail:hover::after { transform: none; } }
+.contact__mail:focus-visible::after { transform: none; }
 .contact__grid { margin-top: clamp(64px, 8vw, 128px); border-top: 1px solid var(--c-line-strong); }
 .contact__cell { padding: 18px var(--gutter) 24px 0; display: grid; gap: 12px; align-content: start; font-size: var(--t-s); }
 .contact__cell + .contact__cell { padding-left: var(--gutter); border-left: 1px solid var(--c-line); }
@@ -505,7 +509,7 @@ html.frame-away .toolbar { top: 0; }
 
 /* Touch screens never see the hover: the lines that draw on hover are drawn whole. */
 @media (hover: none) {
-  .arrow-link::after, .contact__mail::after { transform: none; }
+  .arrow-link::after { transform: none; }
 }
 
 /* ---------- Reduced motion: keep a visible state for every hover that moved ---------- */
