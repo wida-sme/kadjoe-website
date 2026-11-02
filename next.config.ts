@@ -8,7 +8,9 @@ const nextConfig: NextConfig = {
   images: {
     loader: 'custom',
     loaderFile: './src/lib/image-loader.ts',
-    deviceSizes: [640, 960, 1280, 1600, 1920, 2560],
+    // Steps of at most ~25%, so the file a cell gets is close to the cell (case page rows of 687,
+    // 1037 and 1382 px at 1440 take 800, 1120 and 1440 instead of 960, 1280 and 1600).
+    deviceSizes: [640, 800, 960, 1120, 1280, 1440, 1600, 1920, 2240, 2560],
     imageSizes: [160, 320, 480],
     qualities: [75],
   },

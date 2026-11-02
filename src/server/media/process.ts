@@ -6,7 +6,7 @@ import { MEDIA_DIR } from '../paths';
 // Every photograph is stored once as a master (long edge at most MASTER_EDGE, WebP, sRGB, no
 // metadata). The sizes the site asks for are cut from it on first request and kept on disk.
 export const MASTER_EDGE = 2560;
-export const WIDTHS = [160, 320, 480, 640, 960, 1280, 1600, 1920, 2560] as const;
+export const WIDTHS = [160, 320, 480, 640, 800, 960, 1120, 1280, 1440, 1600, 1920, 2240, 2560] as const; // = next.config.ts images
 
 sharp.cache(false);
 sharp.concurrency(2);
@@ -63,8 +63,10 @@ export function hashDistance(a: string, b: string) {
   return n;
 }
 
-/** WebP quality of a size: 75 at the smallest and largest widths, where the bytes add up, 76 between. */
-export const variantQuality = (width: number) => (width <= 480 || width >= 1600 ? 75 : 76);
+/** WebP quality of a size. Every width a thumbnail can use (up to 1920) is at 75 or more: 76 in the
+ *  middle, 75 at both ends where the bytes add up. The retina gallery widths (2240, 2560) stay at 72:
+ *  they are the largest files, and a quality step does not show at that scale. */
+export const variantQuality = (width: number) => (width >= 2240 ? 72 : width <= 480 || width >= 1600 ? 75 : 76);
 
 /** Path of the WebP at `width`, cut from the master on first use. Width must be one of WIDTHS.
  *  The quality is part of the file name, so a change of quality cuts every size again instead of

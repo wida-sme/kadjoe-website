@@ -20,8 +20,12 @@ beforeAll(async () => {
 afterAll(() => { fs.rmSync(dir, { recursive: true, force: true }); });
 
 describe('photograph sizes', () => {
-  it('encodes every width at quality 75 or more', () => {
-    for (const w of media.WIDTHS) expect(media.variantQuality(w), `${w} px`).toBeGreaterThanOrEqual(75);
+  it('encodes every width a thumbnail can use (up to 1920) at quality 75 or more', () => {
+    for (const w of media.WIDTHS.filter((x) => x <= 1920)) expect(media.variantQuality(w), `${w} px`).toBeGreaterThanOrEqual(75);
+  });
+
+  it('keeps the retina gallery widths (2240, 2560) at 72, where the bytes are largest', () => {
+    expect([media.variantQuality(2240), media.variantQuality(2560)]).toEqual([72, 72]);
   });
 
   it('cuts a size again when the file on disk came from an older recipe', async () => {
@@ -39,5 +43,13 @@ describe('photograph sizes', () => {
     const mtime = fs.statSync(first!).mtimeMs;
     expect(await media.variant(id, 640)).toBe(first);
     expect(fs.statSync(first!).mtimeMs).toBe(mtime);
+  });
+});
+
+describe('widths', () => {
+  it('serves exactly the widths next/image asks for', async () => {
+    const config = (await import('../next.config')).default;
+    const asked = [...(config.images?.imageSizes ?? []), ...(config.images?.deviceSizes ?? [])].sort((a, b) => a - b);
+    expect([...media.WIDTHS]).toEqual(asked);
   });
 });

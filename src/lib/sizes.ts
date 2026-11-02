@@ -29,3 +29,20 @@ export function wallSizes(photo: Shape, i: number, { phone = 'wall' }: { phone?:
   const small = phone === 'pair' ? coverWidth(photo, 4 / 5, '46vw') : coverWidth(photo, slot.frame, slot.phone);
   return `(max-width: 767px) ${small}, ${coverWidth(photo, slot.frame, slot.desk)}`;
 }
+
+// The case page gallery hangs photographs at their own aspect ratio (no crop) in rows set in
+// site.css (.g-row--*): the sheet is the page less its margins (at most 32 px a side; 16 on phones).
+export type CellKind = 'full' | 'right' | 'left' | 'pair' | 'solo-left' | 'solo-right';
+const sheet = (share: number, phone: boolean) => {
+  const base = phone ? '100vw - 32px' : '100vw - 64px';
+  return share === 1 ? `calc(${base})` : `calc((${base}) * ${share})`;
+};
+
+/** `sizes` for a photograph in a gallery row; `share` is its part of a pair (by aspect ratio). */
+export function cellSizes(kind: CellKind, share = 1) {
+  const s = Math.round(share * 100) / 100;
+  if (kind === 'pair') return `(max-width: 767px) ${sheet(s, true)}, ${sheet(s, false)}`;
+  if (kind === 'solo-left' || kind === 'solo-right') return `(max-width: 767px) ${sheet(0.82, true)}, ${sheet(0.5, false)}`;
+  if (kind === 'right' || kind === 'left') return `(max-width: 767px) ${sheet(1, true)}, ${sheet(0.75, false)}`;
+  return `(max-width: 767px) ${sheet(1, true)}, ${sheet(1, false)}`;
+}

@@ -2,7 +2,7 @@
 // portrait frame is drawn wider than the frame, so the browser must be told the drawn width or it
 // picks a file that is upscaled on screen.
 import { describe, expect, it } from 'vitest';
-import { coverWidth, wallSizes } from '@/lib/sizes';
+import { cellSizes, coverWidth, wallSizes } from '@/lib/sizes';
 
 const landscape = { width: 1500, height: 1000 }; // 3:2
 const portrait = { width: 1000, height: 1250 }; // 4:5
@@ -32,5 +32,24 @@ describe('wallSizes', () => {
 
   it('uses the two-column phone grid of the projects index when asked', () => {
     expect(wallSizes(landscape, 0, { phone: 'pair' })).toBe('(max-width: 767px) calc(46vw * 1.88), 56vw');
+  });
+});
+
+describe('cellSizes (case page gallery)', () => {
+  it('sizes a full-width landscape to the sheet, less the margins', () => {
+    expect(cellSizes('full')).toBe('(max-width: 767px) calc(100vw - 32px), calc(100vw - 64px)');
+  });
+
+  it('sizes inset rows to three quarters of the sheet on desktop and the full width on phones', () => {
+    expect(cellSizes('right')).toBe('(max-width: 767px) calc(100vw - 32px), calc((100vw - 64px) * 0.75)');
+    expect(cellSizes('left')).toBe(cellSizes('right'));
+  });
+
+  it('sizes a lone portrait to half the sheet (82% on phones)', () => {
+    expect(cellSizes('solo-left')).toBe('(max-width: 767px) calc((100vw - 32px) * 0.82), calc((100vw - 64px) * 0.5)');
+  });
+
+  it('sizes each photograph of a pair by its share of the row', () => {
+    expect(cellSizes('pair', 0.545)).toBe('(max-width: 767px) calc((100vw - 32px) * 0.55), calc((100vw - 64px) * 0.55)');
   });
 });
