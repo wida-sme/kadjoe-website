@@ -154,7 +154,7 @@ export function HeroSheet({ items, title }: { items: HeroItem[]; title: string }
   const project = items[index].project;
 
   return (
-    <section className="hero" aria-label="Selected projects">
+    <section className="hero" aria-labelledby="hero-title">
       <div
         ref={stage}
         className="hero__stage"
@@ -192,7 +192,7 @@ export function HeroSheet({ items, title }: { items: HeroItem[]; title: string }
       </div>
       <div ref={strip} className="hero__strip">
         <div className="hero__cell hero__cell--title">
-          <h1 className="hero__title" data-split="lines" data-intro>{title}</h1>
+          <h1 id="hero-title" className="hero__title" data-split="lines" data-intro>{title}</h1>
         </div>
         {CELLS.map((c) => (
           <div key={c.key} className={`hero__cell ${c.className}`}>

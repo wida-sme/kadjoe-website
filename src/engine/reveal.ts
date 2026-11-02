@@ -24,6 +24,9 @@ function splitTween(el: HTMLElement, isIntro: boolean) {
   SplitText.create(el, {
     type: type === 'lines' ? 'lines' : `lines,${type}`,
     mask: 'lines',
+    // Lines keep every word whole, so they stay readable as they are. 'auto' would copy the text
+    // into aria-label, which ARIA does not allow on a paragraph.
+    aria: type === 'lines' ? 'none' : 'auto',
     autoSplit: true,
     linesClass: 'split-line',
     onSplit(self) {
