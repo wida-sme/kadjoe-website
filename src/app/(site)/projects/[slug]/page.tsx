@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { Gallery, type GalleryRow } from '@/components/site/Gallery';
 import { Pic, photoAlt } from '@/components/site/Pic';
 import { site } from '@/content/site';
+import { coverWidth } from '@/lib/sizes';
 import { CATEGORY_LABEL, designLine, getNextProject, getProject, sheetNo, type Photo } from '@/server/site/queries';
 
 export const dynamic = 'force-dynamic';
@@ -109,7 +110,7 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
               <span className="label">Next project</span>
               <span className="next__name display">{next.name}</span>
             </div>
-            {next.cover ? <Pic photo={next.cover} alt="" className="next__photo" sizes="220px" /> : null}
+            {next.cover ? <Pic photo={next.cover} alt="" className="next__photo" sizes={coverWidth(next.cover, 4 / 5, '220px')} /> : null}
           </Link>
         </nav>
       ) : null}

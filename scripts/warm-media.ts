@@ -12,7 +12,8 @@ async function main() {
   const { db, sqlite } = openDatabase();
   const jobs: [string, number][] = [];
   for (const h of db.select({ id: heroSlides.mediaId }).from(heroSlides).all()) for (const w of [640, 960, 1280, 1920, 2560]) jobs.push([h.id, w]);
-  for (const p of db.select({ id: projects.coverId }).from(projects).where(isNotNull(projects.coverId)).all()) for (const w of [160, 320, 480, 640, 960, 1280]) jobs.push([p.id!, w]);
+  // Covers: index thumbnails are cropped into 4:5 frames, so a retina screen asks for 1600 and 1920.
+  for (const p of db.select({ id: projects.coverId }).from(projects).where(isNotNull(projects.coverId)).all()) for (const w of [160, 320, 480, 640, 960, 1280, 1600, 1920]) jobs.push([p.id!, w]);
   if (all) for (const m of db.select({ id: media.id }).from(media).where(eq(media.hidden, false)).all()) for (const w of [640, 960, 1280]) jobs.push([m.id, w]);
   let done = 0;
   const started = Date.now();

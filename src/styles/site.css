@@ -199,27 +199,36 @@ html.frame-away .header { translate: 0 -101%; }
 }
 .section-head__count { font-family: var(--f-mono); font-size: var(--t-xs); color: var(--c-muted); }
 
-/* Selected projects: photographs hung on the grid with deliberate empty cells. */
+/* The photograph wall: six photographs hung on the 12-column grid with deliberate empty cells.
+   Home "Selected projects" hangs it at full drop; the projects index (.wall--index) tighter. The
+   width and frame of each slot are mirrored in src/lib/sizes.ts, which tells the browser how wide
+   each photograph is drawn. */
 .works { padding-bottom: var(--sec); }
-.works__wall { row-gap: clamp(72px, 9vw, 150px); align-items: start; }
-.work { display: block; }
-.work:nth-child(6n + 1) { grid-column: 1 / span 7; }
-.work:nth-child(6n + 2) { grid-column: 9 / span 4; margin-top: clamp(80px, 16vw, 260px); }
-.work:nth-child(6n + 3) { grid-column: 2 / span 4; }
-.work:nth-child(6n + 4) { grid-column: 7 / span 6; margin-top: clamp(40px, 8vw, 140px); }
-.work:nth-child(6n + 5) { grid-column: 1 / span 6; }
-.work:nth-child(6n + 6) { grid-column: 8 / span 5; margin-top: clamp(60px, 12vw, 200px); }
-.work .photo { aspect-ratio: 3 / 2; }
-.work:nth-child(6n + 2) .photo, .work:nth-child(6n + 3) .photo, .work:nth-child(6n + 6) .photo { aspect-ratio: 4 / 5; }
+.wall { --drop: 1; row-gap: clamp(72px, 9vw, 150px); align-items: start; }
+.wall > li { display: block; }
+.wall > :nth-child(6n + 1) { grid-column: 1 / span 7; }
+.wall > :nth-child(6n + 2) { grid-column: 9 / span 4; margin-top: calc(var(--drop) * clamp(80px, 16vw, 260px)); }
+.wall > :nth-child(6n + 3) { grid-column: 2 / span 4; }
+.wall > :nth-child(6n + 4) { grid-column: 7 / span 6; margin-top: calc(var(--drop) * clamp(40px, 8vw, 140px)); }
+.wall > :nth-child(6n + 5) { grid-column: 1 / span 6; }
+.wall > :nth-child(6n + 6) { grid-column: 8 / span 5; margin-top: calc(var(--drop) * clamp(60px, 12vw, 200px)); }
+.wall .photo { aspect-ratio: 3 / 2; }
+.wall > :nth-child(6n + 2) .photo, .wall > :nth-child(6n + 3) .photo, .wall > :nth-child(6n + 6) .photo { aspect-ratio: 4 / 5; }
+.wall--index { --drop: 0.55; row-gap: clamp(56px, 6.4vw, 104px); }
 .works__more { margin-top: clamp(56px, 7vw, 96px); display: flex; justify-content: flex-end; }
 @media (max-width: 767px) {
   .works .cap { grid-template-columns: minmax(0, 1fr) auto; }
   .works .cap__name { grid-column: 1 / -1; margin-bottom: 4px; }
   .works .cap__name + .cap__meta { padding-left: 0; }
-  .works__wall { row-gap: 56px; }
-  .work:nth-child(n) { grid-column: 1 / -1; margin-top: 0; }
-  .work:nth-child(6n + 2), .work:nth-child(6n + 6) { grid-column: 4 / -1; }
-  .work:nth-child(6n + 3) { grid-column: 1 / span 10; }
+  .wall { row-gap: 56px; }
+  .wall > :nth-child(n) { grid-column: 1 / -1; margin-top: 0; }
+  .wall > :nth-child(6n + 2), .wall > :nth-child(6n + 6) { grid-column: 4 / -1; }
+  .wall > :nth-child(6n + 3) { grid-column: 1 / span 10; }
+  /* The index stays two to a row on phones; the second column hangs lower, as on the wall. */
+  .wall--index { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 36px; }
+  .wall--index > :nth-child(n) { grid-column: auto; margin-top: 0; }
+  .wall--index > :nth-child(2n) { margin-top: 48px; }
+  .wall--index > :nth-child(n) .photo { aspect-ratio: 4 / 5; }
 }
 
 /* Caption: a small title block under every project photograph. */
@@ -229,6 +238,9 @@ html.frame-away .header { translate: 0 -101%; }
 .cap__name { font-size: var(--t-m); line-height: 1.2; letter-spacing: -0.01em; transition: translate 0.6s var(--ease-out); }
 .cap__meta { font-family: var(--f-mono); font-size: var(--t-label); letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-muted); padding-left: 16px; white-space: nowrap; }
 .cap__meta + .cap__meta { border-left: 1px solid var(--c-line); margin-left: 16px; }
+/* The sheet number leads the caption, as it leads a drawing's title block. */
+.cap--sheet { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+.cap__no { font-family: var(--f-mono); font-size: var(--t-label); letter-spacing: 0.08em; color: var(--c-muted); font-variant-numeric: tabular-nums; padding-right: 14px; margin-right: 14px; border-right: 1px solid var(--c-line); }
 @media (hover: hover) {
   .card-link:hover .cap::after { transform: scaleX(1); }
   .card-link:hover .cap__name { translate: 8px 0; }
@@ -322,18 +334,16 @@ html.frame-away .toolbar { top: 0; }
 @media (hover: hover) { .chip:hover { color: var(--c-fg); } .chip:hover::after { transform: scaleX(1); transform-origin: left; } }
 .chip:focus-visible::after { transform: scaleX(1); }
 
-.pgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--gutter); row-gap: clamp(40px, 4.4vw, 72px); padding-bottom: var(--sec); }
-.pgrid .photo { aspect-ratio: 4 / 5; }
-.pgrid > li[hidden] { display: none; }
+.pgrid { padding-bottom: var(--sec); }
 .more { display: flex; justify-content: center; margin: calc(-1 * var(--sec) + 48px) 0 var(--sec); }
 .more .num { font-size: var(--t-label); }
-@media (max-width: 1023px) { .pgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 767px) {
-  .pgrid { row-gap: 36px; }
-  .pgrid .cap { grid-template-columns: 1fr; gap: 4px; }
-  .pgrid .cap__meta { padding-left: 0; }
+  /* Two lines: the name, then sheet number and category. */
+  .pgrid .cap { grid-template-columns: auto minmax(0, 1fr); row-gap: 4px; }
+  .pgrid .cap__name { grid-column: 1 / -1; grid-row: 1; font-size: var(--t-s); }
+  .pgrid .cap__no { grid-row: 2; padding-right: 10px; margin-right: 10px; }
+  .pgrid .cap__meta { grid-row: 2; padding-left: 0; }
   .pgrid .cap__meta + .cap__meta { display: none; }
-  .pgrid .cap__name { font-size: var(--t-s); }
 }
 
 /* Register: the drawing list of every project. */

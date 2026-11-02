@@ -63,18 +63,29 @@ export function hashDistance(a: string, b: string) {
   return n;
 }
 
-/** Path of the WebP at `width`, cut from the master on first use. Width must be one of WIDTHS. */
+/** WebP quality of a size: 75 at the smallest and largest widths, where the bytes add up, 76 between. */
+export const variantQuality = (width: number) => (width <= 480 || width >= 1600 ? 75 : 76);
+
+/** Path of the WebP at `width`, cut from the master on first use. Width must be one of WIDTHS.
+ *  The quality is part of the file name, so a change of quality cuts every size again instead of
+ *  serving files made with the old settings; the old file is removed once the new one exists. */
 export async function variant(id: string, width: number) {
-  const file = path.join(/*turbopackIgnore: true*/ mediaDir(id), `w${width}.webp`);
+  const quality = variantQuality(width);
+  const dir = mediaDir(id);
+  const file = path.join(/*turbopackIgnore: true*/ dir, `w${width}q${quality}.webp`);
   if (fs.existsSync(file)) return file;
   const src = masterPath(id);
   if (!fs.existsSync(src)) return null;
   const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
   await sharp(src)
     .resize({ width, withoutEnlargement: true })
-    .webp({ quality: width <= 480 || width >= 1600 ? 72 : 76, effort: 4, smartSubsample: true })
+    .webp({ quality, effort: 4, smartSubsample: true })
     .toFile(tmp);
   fs.renameSync(tmp, file); // atomic: a concurrent request never reads half a file
+  const older = new RegExp(`^w${width}(q\\d+)?\\.webp$`);
+  for (const f of fs.readdirSync(dir)) {
+    if (older.test(f) && f !== path.basename(file)) fs.rmSync(path.join(/*turbopackIgnore: true*/ dir, f), { force: true });
+  }
   return file;
 }
 

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { HeroSheet, type HeroItem } from '@/components/site/HeroSheet';
 import { Pic, PreviewBox, photoAlt } from '@/components/site/Pic';
 import { site } from '@/content/site';
+import { coverWidth, wallSizes } from '@/lib/sizes';
 import { CATEGORIES } from '@/server/db/schema';
 import {
   CATEGORY_LABEL, designLine, getCategoryCounts, getCategoryCovers, getDesignPartners, getFeaturedProjects, getHeroSlides, sheetNo,
@@ -42,16 +43,17 @@ export default function Home() {
             <h2 id="works-title" className="h2">Selected projects</h2>
             <span className="section-head__count">{String(featured.length).padStart(2, '0')} of {total}</span>
           </div>
-          <ul className="works__wall grid12">
+          <ul className="grid12 wall">
             {featured.map((p, i) => (
-              <li key={p.id} className="work">
+              <li key={p.id}>
                 <Link prefetch={false} href={`/projects/${p.slug}`} className="card-link" data-label={p.name} data-sheet={sheetNo(p.no)}>
                   {p.cover ? (
                     <div data-reveal="clip" data-delay={String((i % 2) * 0.08)}>
-                      <Pic photo={p.cover} alt={photoAlt(p.name, p.location)} className="photo--zoom" sizes="(max-width: 767px) 100vw, 58vw" />
+                      <Pic photo={p.cover} alt={photoAlt(p.name, p.location)} className="photo--zoom" sizes={wallSizes(p.cover, i)} />
                     </div>
                   ) : null}
-                  <div className="cap">
+                  <div className="cap cap--sheet">
+                    <span className="cap__no">{sheetNo(p.no)}</span>
                     <span className="cap__name">{p.name}</span>
                     <span className="cap__meta">{CATEGORY_LABEL[p.category]}</span>
                     {p.year ? <span className="cap__meta">{p.year}</span> : null}
@@ -74,7 +76,7 @@ export default function Home() {
             return (
               <li key={c}>
                 <Link prefetch={false} href={`/projects?category=${c}`} className="cat" data-label="Projects" data-preview={cover ? `/media/${cover.id}/640.webp` : undefined}>
-                  {cover ? <Pic photo={cover} alt="" className="cat__thumb" sizes="72px" /> : null}
+                  {cover ? <Pic photo={cover} alt="" className="cat__thumb" sizes={coverWidth(cover, 1, '72px')} /> : null}
                   <span className="cat__name">{CATEGORY_LABEL[c]}</span>
                   <span className="cat__count"><span>{String(counts[c]).padStart(2, '0')}</span><span className="arrow" aria-hidden="true">→</span></span>
                 </Link>

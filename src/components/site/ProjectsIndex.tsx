@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ease, prefersReducedMotion } from '@/engine';
 import type { Category } from '@/server/db/schema';
+import { coverWidth, wallSizes } from '@/lib/sizes';
 import type { Photo } from '@/server/site/queries';
 import { Pic, PreviewBox, photoAlt } from './Pic';
 
@@ -67,12 +68,13 @@ export function ProjectsIndex({ projects, counts, initialCategory, initialView }
       <div ref={list}>
         {view === 'photographs' ? (
           <>
-          <ul className="pgrid">
+          <ul className="pgrid grid12 wall wall--index">
             {matching.slice(0, limit).map((p, i) => (
               <li key={p.slug}>
                 <Link href={`/projects/${p.slug}`} className="card-link" data-label={p.name} data-sheet={String(p.no).padStart(3, '0')} prefetch={false}>
-                  {p.cover ? <Pic photo={p.cover} alt={photoAlt(p.name, p.location)} className="photo--zoom" sizes="(max-width: 1023px) 50vw, 33vw" priority={i < 3} /> : <div className="photo" />}
-                  <div className="cap">
+                  {p.cover ? <Pic photo={p.cover} alt={photoAlt(p.name, p.location)} className="photo--zoom" sizes={wallSizes(p.cover, i, { phone: 'pair' })} priority={i < 2} /> : <div className="photo" />}
+                  <div className="cap cap--sheet">
+                    <span className="cap__no">{String(p.no).padStart(3, '0')}</span>
                     <span className="cap__name">{p.name}</span>
                     <span className="cap__meta">{LABEL[p.category]}</span>
                     {p.year ? <span className="cap__meta">{p.year}</span> : null}
@@ -99,7 +101,7 @@ export function ProjectsIndex({ projects, counts, initialCategory, initialView }
               return (
                 <Link key={p.slug} href={`/projects/${p.slug}`} prefetch={false} className="reg-row" hidden={!visible} data-label={p.name} data-sheet={String(p.no).padStart(3, '0')} data-preview={p.cover ? `/media/${p.cover.id}/640.webp` : undefined}>
                   <span className="num">{String(p.no).padStart(3, '0')}</span>
-                  {p.cover ? <Pic photo={p.cover} alt="" className="reg-thumb" sizes="64px" /> : <span className="reg-thumb photo" />}
+                  {p.cover ? <Pic photo={p.cover} alt="" className="reg-thumb" sizes={coverWidth(p.cover, 1, '64px')} /> : <span className="reg-thumb photo" />}
                   <span className="reg-row__name">{p.name}</span>
                   <span className="reg-row__cat muted">{p.typeLabel ?? LABEL[p.category]}</span>
                   <span className="reg-row__loc muted">{p.location ?? ''}</span>
