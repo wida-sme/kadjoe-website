@@ -62,7 +62,7 @@ Screenshot:  a full-width interior photograph inside a paper sheet, with the hai
 | sheet (dark) | `#1C1B1A` | divider sheets: curtain, loader, footer (as in the company profile) |
 | on-sheet | `#EDEDEA`, muted `#A09C96` | 14.7:1 and 6.3:1 |
 
-No accent colour. Focus rings are ink on paper and paper on the dark sheet.
+No accent colour. Focus rings are 2 px at a 3 px offset: ink on paper and paper on the dark sheet.
 
 ### Type
 
@@ -100,10 +100,12 @@ marks the end of a sheet: above the footer and under the case-page title block.
   phone; the first sight is the hero sheet itself instead: the rule passes once over the photograph
   and the title-block values rise into their cells.
 - Hovers, one per role:
-  - nav links: a hairline draws under the label (current page keeps it);
+  - nav links: a hairline draws under the label (current page keeps it and nudges 4 px along it);
+  - the logo: a hairline draws under the wordmark, from its first letter;
   - project images: the photograph settles 3% larger inside its frame and the caption rule draws;
   - index rows (categories, register, partners): the row slides 12 px along the rule and a preview
-    photograph follows the pointer (desktop) or sits inline (touch);
+    photograph follows the pointer beside the row's label, never over it (desktop), or sits inline
+    (touch);
   - the few calls to action: a dark fill slides up from the bottom edge and the label inverts;
   - arrows nudge 4 px along their direction.
 - Idle: the hero sheet changes every 6.5 s with a progress hairline and a pause control. Every
@@ -146,9 +148,10 @@ marks the end of a sheet: above the footer and under the case-page title block.
 
 ### Projects
 h1 + count, category filter (All, Residential, F&B, Commercial, with counts), view toggle
-(Photographs / Register). Photographs: 3 columns desktop, 2 on phones; captions are mini title
-strips. Register: a drawing register table (No., Project, Category, Location, Year, Design) with a
-pointer preview; on phones a two-line row with a thumbnail.
+(Photographs / Register). Photographs: hung on the home page's six-photograph wall (the same slots,
+shorter drops) on desktop, two columns on phones with the second hanging lower; captions are mini
+title strips led by the sheet number. Register: a drawing register table (No., Project, Category,
+Location, Year, Design) with a pointer preview; on phones a two-line row with a thumbnail.
 
 ### Project (case page)
 h1 name; title block grid (Type, Location, Year, Service, Design, Photography, Build); hero
@@ -160,7 +163,8 @@ h1 + count; register of studios in random order (name, Instagram, projects built
 links), pointer preview of a project photograph.
 
 ### About Us
-h1; Kadjoe's statement; an image; three services in Kadjoe's words; clients as a list of names.
+h1; Kadjoe's statement; an image (there from the first paint: it is the phone's largest paint); three
+services in Kadjoe's words; clients as a list of names.
 
 ### Contact
 h1; the email set large; the Kalideres address with a map link; Instagram.
@@ -195,3 +199,6 @@ sentences are Kadjoe's own.
 - Category counts are real (from the database), never rounded up.
 - Mono is used only for title-block lettering, counters and the wordmark echo.
 - Partner order is shuffled on the server for every request so no studio reads as ranked.
+- Photographs are cut in steps of at most about 25% (160 to 2560 px, src/server/media/process.ts) and
+  every `sizes` describes the width a photograph is drawn at, crop included (src/lib/sizes.ts), so a
+  frame gets a file close to its size. Widths up to 1920 are encoded at quality 75 or more.
