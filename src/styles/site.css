@@ -158,7 +158,7 @@ html.frame-away .header { translate: 0 -101%; }
 .hero__tb {
   position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: auto minmax(0, 1fr) auto auto auto auto;
-  border-block: 1px solid var(--c-line-strong); border-right: 1px solid var(--c-line);
+  border-top: 1px solid var(--c-line-strong); border-right: 1px solid var(--c-line);
 }
 .hero__cell { min-width: 0; padding: 14px 18px 16px; border-top: 1px solid var(--c-line); display: grid; align-content: start; gap: 10px; }
 .hero__cell--title, .hero__cell--project, .hero__cell--design, .hero__cell--sheet, .hero__cell--controls { grid-column: 1 / -1; }
@@ -195,7 +195,9 @@ html.frame-away .header { translate: 0 -101%; }
 /* First sight: the values wait for the rule's first pass (HeroSheet sets data-drawn after it). */
 .motion .hero__tb:not([data-drawn]) [data-front] { clip-path: inset(0 0 100% 0); }
 
-.hero__cell--controls { gap: 0; padding-block: 8px 14px; }
+/* The progress hairline is the sheet's last rule: it runs the full width of the title block, along
+   the photograph's bottom edge, and draws in ink while a photograph holds. */
+.hero__cell--controls { gap: 0; padding-block: 8px 0; }
 .hero__controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .hero__count { font-family: var(--f-mono); font-size: var(--t-xs); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hero__buttons { display: flex; gap: 2px; margin-right: -11px; } /* the last arrow's stroke ends on the cell's edge */
@@ -208,7 +210,7 @@ html.frame-away .header { translate: 0 -101%; }
   .icon-btn[data-dir='prev']:hover svg { translate: -4px 0; scale: 1; }
 }
 .icon-btn:active svg { scale: 0.8; }
-.hero__progress { height: 1px; background: var(--c-line); position: relative; overflow: hidden; margin-top: 8px; }
+.hero__progress { height: 1px; background: var(--c-line-strong); position: relative; overflow: hidden; margin: 14px -18px 0; }
 .hero__progress span { position: absolute; inset: 0; background: var(--c-fg); transform: scaleX(0); transform-origin: left; }
 
 /* Short laptop screens: the design credit gives way so the title block keeps its proportions. */
@@ -227,7 +229,8 @@ html.frame-away .header { translate: 0 -101%; }
   .hero__cell--location { grid-row: 3; grid-column: 1; }
   .hero__cell--year { grid-row: 3; grid-column: 2; padding: 14px 0 16px 16px; }
   .hero__cell--design { grid-row: 4; }
-  .hero__cell--controls { grid-row: 5; padding-right: 0; }
+  .hero__cell--controls { grid-row: 5; padding-right: 0; padding-bottom: 0; }
+  .hero__progress { margin-inline: 0; }
   .hero__name { font-size: clamp(2rem, 1.3rem + 2.6vw, 2.75rem); height: calc(2lh + 0.08em); }
   .hero__name > * { -webkit-line-clamp: 2; line-clamp: 2; }
   .hero__no { font-size: clamp(2rem, 1.3rem + 2.6vw, 2.75rem); align-self: end; }
