@@ -3,17 +3,22 @@
 // layout (React runs child effects first, so page components register before the engine boots).
 // Internal links (plain <a> or next/link) get leave → push → enter. Opt a link out with
 // data-no-transition. Back/forward re-inits the page without the curtain.
-import { useEffect, useRef } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+//
+// Page swaps are detected in the commit that renders the new page, not in a popstate listener.
+// Next restores a history entry inside its own popstate listener, and React renders a transition
+// started during popstate synchronously, effects included: by the time a listener of ours ran, the
+// new page was already on screen. Only a pathname change swaps the page; a query or hash change on
+// the same page (the project filters) keeps it.
+import { useEffect, useLayoutEffect, useRef } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { boot, cleanup, enter, leave, onPage, type PageFn } from './index';
 
 export function Engine({ setup }: { setup?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
-  const search = useSearchParams();
-  const mode = useRef<'idle' | 'push' | 'pop'>('idle');
-  const first = useRef(true);
-  const lastUrl = useRef('');
+  const pushing = useRef(false); // a transition we started is on its way
+  const shown = useRef<string | null>(null); // pathname of the page on screen
+  const swap = useRef<'push' | 'pop' | null>(null);
 
   useEffect(() => { boot(setup); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -26,36 +31,36 @@ export function Engine({ setup }: { setup?: () => void }) {
       if (url.origin !== location.origin || url.pathname.startsWith('/media')) return;
       if (url.pathname === location.pathname) return; // hash or query change on the same page
       e.preventDefault(); // next/link sees defaultPrevented and stands down
-      if (mode.current !== 'idle') return;
-      mode.current = 'push';
+      if (pushing.current) return;
+      pushing.current = true;
       const href = url.pathname + url.search + url.hash;
       router.prefetch(href);
       await leave();
       cleanup();
       router.push(href, { scroll: false });
     };
-    // Hash-only history steps keep the page; anything else swaps it without the curtain.
-    const onPop = () => {
-      if (location.pathname + location.search === lastUrl.current) return;
-      mode.current = 'pop';
-      cleanup();
-    };
     document.addEventListener('click', onClick, true);
-    addEventListener('popstate', onPop);
-    return () => {
-      document.removeEventListener('click', onClick, true);
-      removeEventListener('popstate', onPop);
-    };
+    return () => document.removeEventListener('click', onClick, true);
   }, [router]);
 
+  // Layout phase of the commit that brings a new page: its components have not run their page code
+  // yet (usePage registers in the passive phase), so the old page is torn down first. After a push
+  // the curtain already did this; anything else that changes the page is a history step.
+  useLayoutEffect(() => {
+    const before = shown.current;
+    shown.current = pathname;
+    if (before === null || before === pathname) return; // first page (boot runs it), or same page
+    swap.current = pushing.current ? 'push' : 'pop';
+    pushing.current = false;
+    cleanup();
+  }, [pathname]);
+
   useEffect(() => {
-    lastUrl.current = location.pathname + location.search;
-    if (first.current) { first.current = false; return; }
-    if (mode.current === 'idle') return; // same-page query change (filters): no page swap
-    const pop = mode.current === 'pop';
-    mode.current = 'idle';
-    enter({ transition: !pop, scrollTop: !pop });
-  }, [pathname, search]);
+    const kind = swap.current;
+    if (!kind) return;
+    swap.current = null;
+    enter({ transition: kind === 'push', scrollTop: kind === 'push' });
+  }, [pathname]);
 
   return null;
 }
