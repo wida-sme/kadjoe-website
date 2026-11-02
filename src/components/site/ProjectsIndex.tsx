@@ -102,7 +102,7 @@ export function ProjectsIndex({ projects, counts, initialCategory, initialView }
                 <Link key={p.slug} href={`/projects/${p.slug}`} prefetch={false} className="reg-row" hidden={!visible} data-label={p.name} data-sheet={String(p.no).padStart(3, '0')} data-preview={p.cover ? `/media/${p.cover.id}/640.webp` : undefined}>
                   <span className="num">{String(p.no).padStart(3, '0')}</span>
                   {p.cover ? <Pic photo={p.cover} alt="" className="reg-thumb" sizes={coverWidth(p.cover, 1, '64px')} /> : <span className="reg-thumb photo" />}
-                  <span className="reg-row__name">{p.name}</span>
+                  <span className="reg-row__name" data-preview-label>{p.name}</span>
                   <span className="reg-row__cat muted">{p.typeLabel ?? LABEL[p.category]}</span>
                   <span className="reg-row__loc muted">{p.location ?? ''}</span>
                   <span className="reg-row__year num">{p.year ?? ''}</span>

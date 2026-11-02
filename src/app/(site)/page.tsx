@@ -77,7 +77,7 @@ export default function Home() {
               <li key={c}>
                 <Link prefetch={false} href={`/projects?category=${c}`} className="cat" data-label="Projects" data-preview={cover ? `/media/${cover.id}/640.webp` : undefined}>
                   {cover ? <Pic photo={cover} alt="" className="cat__thumb" sizes={coverWidth(cover, 1, '72px')} /> : null}
-                  <span className="cat__name">{CATEGORY_LABEL[c]}</span>
+                  <span className="cat__name" data-preview-label>{CATEGORY_LABEL[c]}</span>
                   <span className="cat__count"><span>{String(counts[c]).padStart(2, '0')}</span><span className="arrow" aria-hidden="true">→</span></span>
                 </Link>
               </li>

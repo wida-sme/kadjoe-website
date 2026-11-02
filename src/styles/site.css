@@ -68,16 +68,24 @@
   transition: translate 0.6s var(--ease-out);
 }
 html.frame-away .header { translate: 0 -101%; }
-.header__logo { display: block; padding-block: 8px; }
+.header__logo { --logo-w: clamp(118px, 9.4vw, 146px); position: relative; display: block; padding-block: 8px; }
 .logo {
-  display: block; width: clamp(118px, 9.4vw, 146px); aspect-ratio: 900 / 261; background: currentColor;
+  display: block; width: var(--logo-w); aspect-ratio: 900 / 261; background: currentColor;
   -webkit-mask: url('/brand/kadjoe-logo.png') no-repeat left center / contain;
   mask: url('/brand/kadjoe-logo.png') no-repeat left center / contain;
-  transition: opacity 0.4s var(--ease-out);
 }
-@media (hover: hover) { .header__logo:hover .logo { opacity: 0.62; } }
+/* Like a nav label, the wordmark gets a hairline drawn from its first letter (the shield takes the
+   first 30% of the mark; the letters end 64% down its height). */
+.header__logo::after {
+  content: ''; position: absolute; left: 30%; right: 0; top: calc(8px + var(--logo-w) * 0.187 + 5px); height: 1px;
+  background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform 0.55s var(--ease-out);
+}
+@media (hover: hover) { .header__logo:hover::after { transform: scaleX(1); transform-origin: left; } }
+.header__logo:focus-visible::after { transform: scaleX(1); }
 .nav { display: flex; gap: clamp(20px, 2.4vw, 40px); }
-.nav__link { position: relative; display: inline-block; font-size: var(--t-s); padding-block: 8px; }
+.nav__link { position: relative; display: inline-block; font-size: var(--t-s); padding-block: 8px; transition: translate 0.45s var(--ease-out); }
+/* The current page keeps its hairline; under the pointer it nudges 4 px along it. */
+@media (hover: hover) { .nav__link[aria-current='page']:hover { translate: 4px 0; } }
 .nav__link::after {
   content: ''; position: absolute; left: 0; right: 0; bottom: 3px; height: 1px; background: currentColor;
   transform: scaleX(0); transform-origin: right; transition: transform 0.55s var(--ease-out);
@@ -272,7 +280,7 @@ html.frame-away .header { translate: 0 -101%; }
 /* Pointer preview for index lists (desktop only). */
 .preview {
   position: fixed; left: 0; top: 0; z-index: var(--z-preview); width: clamp(220px, 19vw, 320px); aspect-ratio: 4 / 5;
-  pointer-events: none; opacity: 0; visibility: hidden; translate: -50% -50%; overflow: hidden; background: var(--c-photo);
+  pointer-events: none; opacity: 0; visibility: hidden; overflow: hidden; background: var(--c-photo);
 }
 .preview img { width: 100%; height: 100%; object-fit: cover; }
 

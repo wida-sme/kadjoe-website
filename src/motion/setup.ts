@@ -90,10 +90,14 @@ function titleBlocks() {
 // Rows marked data-preview="<image url>" inside [data-preview-list] show that photograph next to the
 // pointer. Delegated from the document, so lists that appear later (a view switch) work too. Touch
 // devices see inline thumbnails instead (CSS).
+// The photograph never covers the row's label (the element marked data-preview-label, else the row):
+// it sits right of the pointer but not left of the label's end, takes the other side when that would
+// run off the screen, and goes above or below the label only when neither side has room.
 function indexPreview() {
   if (isTouch() || prefersReducedMotion()) return;
   let box: HTMLElement | null = null;
   let img: HTMLImageElement | null = null;
+  let row: HTMLElement | null = null;
   let x: gsap.QuickToFunc | null = null, y: gsap.QuickToFunc | null = null;
   let px = -999, py = -999, shown = false;
   const bind = () => {
@@ -109,25 +113,49 @@ function indexPreview() {
     return box;
   };
   const hide = () => {
+    row = null;
     if (!shown || !box) return;
     shown = false;
     gsap.to(box, { autoAlpha: 0, scale: 0.92, duration: 0.4, ease: ease.out, overwrite: 'auto' });
   };
+  // The label's lettering, not its box: a label in a grid cell stretches across the row.
+  const lettering = (el: Element) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const r = range.getBoundingClientRect();
+    return r.width ? r : el.getBoundingClientRect();
+  };
+  /** Top-left corner of the photograph for the pointer and the hovered row. */
+  const spot = (r: HTMLElement, b: HTMLElement): [number, number] => {
+    const label = lettering(r.querySelector('[data-preview-label]') ?? r);
+    const w = b.offsetWidth, h = b.offsetHeight, edge = 16, gap = 24, lead = 28;
+    const top = Math.min(Math.max(py - h / 2, edge), innerHeight - h - edge);
+    const right = Math.max(px + lead, label.right + gap);
+    if (right + w <= innerWidth - edge) return [right, top];
+    let left = px - lead - w;
+    if (left < label.right + gap && left + w > label.left - gap) left = label.left - gap - w; // clear of the lettering
+    if (left >= edge) return [left, top];
+    const above = label.top - gap - h;
+    return [Math.min(Math.max(px - w / 2, edge), innerWidth - w - edge), above >= edge ? above : label.bottom + gap];
+  };
   const update = (target: Element | null) => {
-    const row = target?.closest<HTMLElement>('[data-preview-list] [data-preview]');
-    if (!row) return hide();
-    if (!bind() || !img) return;
-    const src = row.dataset.preview!;
+    const hit = target?.closest<HTMLElement>('[data-preview-list] [data-preview]') ?? null;
+    if (!hit) return hide();
+    if (!bind() || !img || !box) return;
+    row = hit;
+    const src = hit.dataset.preview!;
     if (img.getAttribute('src') !== src) img.setAttribute('src', src);
+    const [left, top] = spot(row, box);
     if (!shown) {
-      x!(px + 28, px + 28); y!(py, py); // start where the pointer is, then follow
+      x!(left, left); y!(top, top); // appear in place, then follow
       gsap.to(box, { autoAlpha: 1, scale: 1, duration: 0.5, ease: ease.out, overwrite: 'auto' });
+    } else {
+      x!(left); y!(top);
     }
     shown = true;
   };
   addEventListener('pointermove', (e) => {
     px = e.clientX; py = e.clientY;
-    if (box && shown) { x!(px + 28); y!(py); }
     update(e.target as Element);
   }, { passive: true });
   // pointerleave never fires when the page scrolls under a still pointer.
