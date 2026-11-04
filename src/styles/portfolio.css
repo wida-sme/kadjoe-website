@@ -1,0 +1,359 @@
+/* /portfolio: a landing page with its own system (the landing-page-design skill). Dark theme, one
+   typeface (Geist), Tailwind's type scale as named text styles, the spacing tokens below, Tailwind radii
+   and one easing curve. Every rule is scoped to .pf, so nothing here reaches the rest of the site. */
+
+:root:has(.pf) {
+  background: #131209;
+  color-scheme: dark;
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px;
+}
+body:has(.pf) { margin: 0; }
+@media (prefers-reduced-motion: reduce) { :root:has(.pf) { scroll-behavior: auto; } }
+
+.pf {
+  --bg: #131209;
+  --fg: #edebe4;
+  --muted: #a8a496;
+  --line: rgb(237 235 228 / 0.14);
+  --line-strong: rgb(237 235 228 / 0.28);
+  --photo: #1f1f1f;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spacing-25: 2px;
+  --spacing-50: 4px;
+  --spacing-75: 8px;
+  --spacing-100: 12px;
+  --spacing-200: 16px;
+  --spacing-300: 24px;
+  --spacing-400: 32px;
+  --spacing-500: 40px;
+  --spacing-600: 48px;
+  --spacing-700: 64px;
+  --spacing-800: 80px;
+  --spacing-900: 96px;
+  --gutter: var(--spacing-200);
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+@media (min-width: 768px) { .pf { --gutter: var(--spacing-400); } }
+@media (min-width: 1024px) { .pf { --gutter: var(--spacing-600); } }
+
+/* Resets sit in :where() so any single class below overrides them. */
+.pf *, .pf *::before, .pf *::after { box-sizing: border-box; }
+.pf :where(h1, h2, h3, p, ul, ol, dl, dd, figure, hr) { margin: 0; }
+.pf :where(ul, ol) { padding: 0; list-style: none; }
+.pf :where(h1, h2, h3) { text-wrap: balance; }
+.pf :where(p) { text-wrap: pretty; }
+.pf :where(a) { color: inherit; text-decoration: none; }
+.pf :where(svg) { display: block; flex: none; }
+.pf :where(button) { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.pf :focus-visible { outline: 2px solid var(--fg); outline-offset: 4px; }
+.pf #main:focus { outline: none; }
+.pf ::selection { background: var(--fg); color: var(--bg); }
+
+/* ---------- Text styles (Tailwind scale; names as in the skill) ---------- */
+
+.pf .heading-1 { font-size: 3.75rem; line-height: 3.75rem; font-weight: 600; letter-spacing: -0.035em; }
+.pf .heading-2 { font-size: 3rem; line-height: 3rem; font-weight: 600; letter-spacing: -0.03em; }
+.pf .heading-3 { font-size: 2.25rem; line-height: 2.5rem; font-weight: 600; letter-spacing: -0.025em; }
+.pf .heading-4 { font-size: 1.875rem; line-height: 2.25rem; font-weight: 600; letter-spacing: -0.02em; }
+.pf .heading-5 { font-size: 1.5rem; line-height: 2rem; font-weight: 600; letter-spacing: -0.015em; }
+.pf .title-1 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 500; letter-spacing: -0.01em; }
+.pf .title-2 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 500; }
+.pf .title-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
+.pf .title-4 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.pf .body-2 { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
+.pf .body-3 { font-size: 1rem; line-height: 1.5rem; font-weight: 400; }
+.pf .body-5 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.pf .body-6 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+/* Body 7: lead paragraphs. Added from text-lg, the way the skill adds a style to a group. */
+.pf .body-7 { font-size: 1.125rem; line-height: 1.75rem; font-weight: 400; }
+.pf .button-md { font-size: 1rem; line-height: 1.5rem; font-weight: 600; }
+.pf .button-sm { font-size: 0.875rem; line-height: 1.25rem; font-weight: 600; }
+.pf .caption-1 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+.pf .caption-2 { font-size: 0.875rem; line-height: 1.25rem; font-weight: 400; }
+.pf .caption-3 { font-size: 0.75rem; line-height: 1rem; font-weight: 600; }
+.pf .caption-5 { font-size: 0.75rem; line-height: 1rem; font-weight: 400; }
+@media (min-width: 768px) {
+  .pf .md\:heading-2 { font-size: 3rem; line-height: 3rem; letter-spacing: -0.03em; }
+}
+@media (min-width: 1024px) {
+  .pf .lg\:heading-1 { font-size: 3.75rem; line-height: 3.75rem; letter-spacing: -0.035em; }
+}
+
+.pf .pf-muted { color: var(--muted); }
+.pf-label { text-transform: uppercase; letter-spacing: 0.08em; }
+.pf-line { display: block; }
+.pf-num { font-variant-numeric: tabular-nums; }
+
+/* ---------- Layout ---------- */
+
+.pf-wrap { width: 100%; max-width: 1440px; margin-inline: auto; padding-inline: var(--gutter); }
+.pf-measure { max-width: 680px; }
+.pf-stack { display: grid; gap: var(--spacing-300); }
+.pf-section { padding-block: var(--spacing-700); }
+@media (min-width: 1024px) { .pf-section { padding-block: var(--spacing-900); } }
+.pf-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--spacing-300); }
+.pf-split { display: grid; gap: var(--spacing-600); }
+@media (min-width: 1024px) {
+  .pf-split { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--spacing-800); align-items: start; }
+}
+.pf-split__head { display: grid; gap: var(--spacing-300); }
+.pf-rule { height: 1px; border: 0; background: var(--line); }
+
+/* ---------- Controls ---------- */
+
+.pf-skip {
+  position: fixed; z-index: 60; top: var(--spacing-200); left: var(--gutter);
+  padding: var(--spacing-75) var(--spacing-100); border-radius: 9999px;
+  background: var(--fg); color: var(--bg); transform: translateY(-200%);
+}
+.pf-skip:focus-visible { transform: none; }
+
+.pf-btn {
+  display: inline-flex; align-items: center; gap: var(--spacing-75);
+  padding: var(--spacing-75) var(--spacing-100); border-radius: 9999px;
+  background: var(--fg); color: var(--bg); white-space: nowrap;
+  transition: background-color 300ms var(--ease), transform 500ms var(--ease);
+}
+.pf-btn svg { width: 16px; height: 16px; transition: transform 500ms var(--ease); }
+.pf-btn:active { transform: scale(0.98); }
+
+.pf-link {
+  display: inline-flex; align-items: center; gap: var(--spacing-50);
+  text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px;
+  transition: text-decoration-color 300ms var(--ease), transform 500ms var(--ease);
+}
+.pf-link svg { width: 16px; height: 16px; transition: transform 500ms var(--ease); }
+.pf-link:active { transform: translateY(1px); }
+
+@media (hover: hover) {
+  .pf-btn:hover { background: #ffffff; }
+  .pf-btn:hover svg, .pf-link:hover svg { transform: translate(2px, -2px); }
+  .pf-link:hover { text-decoration-color: currentColor; }
+}
+
+/* ---------- Navigation ---------- */
+
+.pf-nav {
+  position: fixed; z-index: 50; top: var(--spacing-200); left: 0; right: 0;
+  display: flex; justify-content: center; padding-inline: var(--gutter); pointer-events: none;
+}
+.pf-bar {
+  position: relative; z-index: 1; pointer-events: auto;
+  display: flex; align-items: center; gap: var(--spacing-300);
+  padding: var(--spacing-50) var(--spacing-50) var(--spacing-50) var(--spacing-300);
+  border: 1px solid var(--line); border-radius: 9999px;
+  background: rgb(19 18 9 / 0.64);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+}
+.pf-logo { display: block; color: var(--fg); transition: opacity 300ms var(--ease), transform 500ms var(--ease); }
+.pf-logo:active { transform: translateY(1px); }
+.pf-logo__mark {
+  display: block; width: 96px; aspect-ratio: 900 / 261; background: currentColor;
+  -webkit-mask: url('/brand/kadjoe-logo.png') no-repeat left center / contain;
+  mask: url('/brand/kadjoe-logo.png') no-repeat left center / contain;
+}
+.pf-bar__links { display: none; gap: var(--spacing-300); }
+.pf-bar__link { display: inline-block; color: var(--muted); transition: color 300ms var(--ease), transform 500ms var(--ease); }
+.pf-bar__link[aria-current] { color: var(--fg); }
+.pf-bar__link:active { transform: translateY(1px); }
+.pf-bar__cta { display: none; }
+
+.pf-toggle {
+  position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 9999px;
+  transition: background-color 300ms var(--ease), transform 500ms var(--ease);
+}
+.pf-toggle:active { transform: scale(0.98); }
+.pf-toggle__bar {
+  position: absolute; width: 16px; height: 2px; border-radius: 9999px; background: currentColor;
+  transition: transform 500ms var(--ease);
+}
+.pf-toggle__bar:first-child { transform: translateY(-4px); }
+.pf-toggle__bar:last-child { transform: translateY(4px); }
+.pf-toggle[aria-expanded='true'] .pf-toggle__bar:first-child { transform: rotate(45deg); }
+.pf-toggle[aria-expanded='true'] .pf-toggle__bar:last-child { transform: rotate(-45deg); }
+
+.pf-menu {
+  position: fixed; inset: 0; z-index: 0; pointer-events: auto;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  padding: var(--spacing-900) var(--gutter) var(--spacing-600);
+  background: rgb(19 18 9 / 0.92);
+  -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+  opacity: 0; visibility: hidden;
+  transition: opacity 300ms var(--ease), visibility 0s var(--ease) 300ms;
+}
+.pf-menu[data-open] { opacity: 1; visibility: visible; transition: opacity 300ms var(--ease); }
+.pf-menu__nav { display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-200); }
+.pf-menu__nav .pf-btn { margin-top: var(--spacing-300); }
+.pf-menu__item {
+  opacity: 0; transform: translateY(var(--spacing-300));
+  transition: opacity 500ms var(--ease), transform 500ms var(--ease), background-color 300ms var(--ease);
+}
+/* 60 ms between items, and never more than 400 ms for the whole sequence. */
+.pf-menu[data-open] .pf-menu__item { opacity: 1; transform: none; transition-delay: min(calc(var(--i) * 60ms), 400ms); }
+.pf-menu__link { transition: opacity 500ms var(--ease), transform 500ms var(--ease), color 300ms var(--ease); }
+.pf-menu[data-open] .pf-menu__link:active { transform: translateY(1px); transition-delay: 0s; }
+
+@media (hover: hover) {
+  .pf-logo:hover { opacity: 0.7; }
+  .pf-bar__link:hover { color: var(--fg); }
+  .pf-toggle:hover { background: rgb(237 235 228 / 0.08); }
+  .pf-menu__link:hover { color: var(--muted); }
+}
+@media (min-width: 768px) {
+  .pf-bar__links { display: flex; }
+  .pf-bar__cta { display: inline-flex; }
+  .pf-toggle, .pf-menu { display: none; }
+}
+
+/* ---------- Photographs ---------- */
+
+.pf .photo { position: relative; overflow: hidden; background: var(--photo); }
+.pf .photo img { object-fit: cover; transition: transform 500ms var(--ease); }
+.pf-frame--hero { aspect-ratio: 4 / 5; }
+.pf-frame--wide { aspect-ratio: 4 / 3; }
+.pf-frame--land { aspect-ratio: 4 / 3; }
+.pf-frame--port { aspect-ratio: 4 / 5; }
+.pf-frame--sector { aspect-ratio: 3 / 2; }
+@media (min-width: 768px) {
+  .pf-frame--hero, .pf-frame--wide { aspect-ratio: 16 / 9; }
+  .pf-frame--sector { aspect-ratio: 4 / 5; }
+}
+@media (min-width: 1280px) { .pf-frame--hero { aspect-ratio: 21 / 9; } }
+
+/* ---------- Hero ---------- */
+
+.pf-hero { padding-top: var(--spacing-900); }
+.pf-hero__in { display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-300); padding-top: var(--spacing-600); }
+@media (min-width: 1024px) { .pf-hero__in { padding-top: var(--spacing-800); } }
+.pf-hero__title {
+  width: fit-content; max-width: 680px;
+  background: linear-gradient(90deg, #ffffff, #9b9b9b);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.pf-hero__title > span { display: block; }
+.pf-hero__sub { max-width: 680px; color: var(--muted); }
+.pf-hero__act { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-200) var(--spacing-300); margin-top: var(--spacing-200); }
+.pf-hero__fig { margin-top: var(--spacing-700); }
+@media (min-width: 1024px) { .pf-hero__fig { margin-top: var(--spacing-900); } }
+.pf-caption { display: flex; flex-wrap: wrap; gap: var(--spacing-50) var(--spacing-200); margin-top: var(--spacing-200); }
+.pf-caption__name { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; transition: text-decoration-color 300ms var(--ease); }
+
+/* ---------- Selected work ---------- */
+
+.pf-work { display: grid; gap: var(--spacing-600); margin-top: var(--spacing-600); }
+@media (min-width: 768px) {
+  .pf-work { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--spacing-800) var(--spacing-300); margin-top: var(--spacing-700); }
+  .pf-card:nth-child(1) { grid-column: 1 / -1; }
+  .pf-card:nth-child(2) { grid-column: 1 / span 7; }
+  .pf-card:nth-child(3) { grid-column: 9 / span 4; margin-top: var(--spacing-900); }
+  .pf-card:nth-child(4) { grid-column: 2 / span 5; }
+  .pf-card:nth-child(5) { grid-column: 8 / span 5; margin-top: var(--spacing-900); }
+}
+.pf-card__link, .pf-sector { display: flex; flex-direction: column; gap: var(--spacing-200); transition: transform 500ms var(--ease); }
+.pf-card__link:active, .pf-sector:active { transform: scale(0.98); }
+.pf-card__meta { display: grid; gap: var(--spacing-50); }
+.pf-card__row { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-200); }
+.pf-card__row svg { width: 20px; height: 20px; color: var(--muted); transition: transform 500ms var(--ease), color 300ms var(--ease); }
+
+@media (hover: hover) {
+  .pf-card__link:hover .photo img, .pf-sector:hover .photo img { transform: scale(1.03); }
+  .pf-card__link:hover .pf-card__row svg, .pf-sector:hover .pf-card__row svg { transform: translate(2px, -2px); color: var(--fg); }
+  .pf-caption__name:hover { text-decoration-color: currentColor; }
+}
+
+/* ---------- Tagline ---------- */
+
+.pf-tagline { max-width: 680px; margin-inline: auto; text-align: center; }
+@media (min-width: 768px) { .pf-tagline__line { display: block; } }
+.motion .pf .pf-word { opacity: 0.3; transition: opacity 500ms var(--ease); }
+.motion .pf .pf-word.is-on { opacity: 1; }
+
+/* ---------- Why Kadjoe, sectors, services ---------- */
+
+.pf-why { display: grid; gap: var(--spacing-600); margin-top: var(--spacing-600); }
+@media (min-width: 768px) { .pf-why { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--spacing-400); margin-top: var(--spacing-800); } }
+.pf-why__item { display: grid; align-content: start; gap: var(--spacing-100); }
+.pf-why__item .pf-num { margin-bottom: var(--spacing-200); }
+
+.pf-sectors { display: grid; gap: var(--spacing-600); margin-top: var(--spacing-600); }
+@media (min-width: 768px) { .pf-sectors { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--spacing-300); } }
+
+.pf-steps { display: grid; gap: var(--spacing-200); }
+.pf-step { display: grid; gap: var(--spacing-100); padding: var(--spacing-300); border: 1px solid var(--line); }
+
+/* ---------- Studios and clients ---------- */
+
+.pf-studios {
+  margin-top: var(--spacing-600); padding: var(--spacing-200) var(--spacing-300);
+  border: 1px solid var(--line); column-gap: var(--spacing-600);
+}
+@media (min-width: 640px) { .pf-studios { columns: 2; } }
+@media (min-width: 1024px) { .pf-studios { columns: 3; } }
+.pf-studio { display: flex; align-items: baseline; justify-content: space-between; gap: var(--spacing-200); padding-block: var(--spacing-75); break-inside: avoid; }
+.pf-clients { display: grid; gap: var(--spacing-200); margin-top: var(--spacing-700); }
+.pf-clients__list { display: flex; flex-wrap: wrap; gap: var(--spacing-75) var(--spacing-400); }
+
+/* ---------- FAQ ---------- */
+
+.pf-faq { display: grid; gap: var(--spacing-75); }
+.pf-faq__item { border: 1px solid var(--line); transition: border-color 300ms var(--ease); }
+.pf-faq__item[open] { border-color: var(--line-strong); }
+.pf-faq__item summary {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-300);
+  padding: var(--spacing-300); list-style: none; cursor: pointer;
+  transition: background-color 300ms var(--ease), transform 500ms var(--ease);
+}
+.pf-faq__item summary::-webkit-details-marker { display: none; }
+.pf-faq__item summary:active { transform: translateY(1px); }
+.pf .pf-faq__item summary:focus-visible { outline-offset: -2px; }
+.pf-faq__item summary svg { width: 20px; height: 20px; color: var(--muted); transition: transform 500ms var(--ease); }
+.pf-faq__item[open] summary svg { transform: rotate(45deg); }
+.pf-faq__a { max-width: 680px; padding: 0 var(--spacing-300) var(--spacing-300); }
+@media (hover: hover) { .pf-faq__item summary:hover { background: rgb(237 235 228 / 0.04); } }
+
+/* ---------- Contact and footer ---------- */
+
+.pf-cta { display: grid; justify-items: start; gap: var(--spacing-300); }
+.pf-contact { display: grid; gap: var(--spacing-300); width: 100%; margin-top: var(--spacing-600); }
+@media (min-width: 768px) { .pf-contact { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
+.pf-contact > div { display: grid; align-content: start; gap: var(--spacing-75); }
+.pf-contact dd .pf-link { margin-top: var(--spacing-75); }
+.pf-contact dd .pf-link:first-child { margin-top: 0; }
+
+.pf-footer { padding-bottom: var(--spacing-600); }
+.pf-footer__in { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--spacing-300); padding-top: var(--spacing-600); }
+.pf-footer__nav { display: flex; flex-wrap: wrap; gap: var(--spacing-100) var(--spacing-300); }
+.pf-footer__nav a { display: inline-block; color: var(--muted); transition: color 300ms var(--ease), transform 500ms var(--ease); }
+.pf-footer__nav a:active { transform: translateY(1px); }
+@media (hover: hover) { .pf-footer__nav a:hover { color: var(--fg); } }
+
+/* ---------- Motion ---------- */
+
+@keyframes pf-rise { from { opacity: 0; transform: translateY(32px); } }
+@keyframes pf-settle { from { transform: scale(1.04); } }
+@keyframes pf-open { from { opacity: 0; transform: translateY(-8px); } }
+
+/* The hero plays on load with CSS alone, so its text never waits for JavaScript. */
+.motion .pf-hero__in > * { animation: pf-rise 800ms var(--ease) both; }
+.motion .pf-hero__in > :nth-child(2) { animation-delay: 80ms; }
+.motion .pf-hero__in > :nth-child(3) { animation-delay: 160ms; }
+.motion .pf-hero__fig .photo img { animation: pf-settle 800ms var(--ease) both; }
+.motion .pf-faq__item[open] .pf-faq__a { animation: pf-open 500ms var(--ease); }
+
+/* Scroll reveals: rise 32px and fade in once (src/components/portfolio/PortfolioMotion.tsx). Under
+   reduced motion the root layout leaves out `motion`, so the block only fades. */
+.js .pf [data-pf-reveal] { opacity: 0; transition: opacity 700ms var(--ease), transform 700ms var(--ease); }
+.motion .pf [data-pf-reveal] { transform: translateY(var(--spacing-400)); }
+.pf [data-pf-reveal].is-in { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-menu__item { transform: none; }
+}
