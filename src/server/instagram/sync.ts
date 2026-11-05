@@ -218,5 +218,5 @@ export function inbox() {
 
 export function recentPosts(limit = 30) {
   return db.select({ post: igPosts, projectName: projects.name }).from(igPosts).leftJoin(projects, eq(projects.id, igPosts.projectId))
-    .where(inArray(igPosts.status, ['imported', 'ignored', 'not_project'])).orderBy(desc(igPosts.fetchedAt), desc(igPosts.postedAt)).limit(limit).all();
+    .where(inArray(igPosts.status, ['imported', 'ignored', 'not_project'])).orderBy(desc(igPosts.postedAt)).limit(limit).all();
 }
