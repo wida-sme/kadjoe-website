@@ -23,7 +23,7 @@ export function Engine({ setup }: { setup?: () => void }) {
       const a = (e.target as Element).closest('a');
       if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download') || a.hasAttribute('data-no-transition')) return;
       const url = new URL(a.href, location.href);
-      if (url.origin !== location.origin || url.pathname.startsWith('/admin') || url.pathname.startsWith('/media')) return;
+      if (url.origin !== location.origin || url.pathname.startsWith('/media')) return;
       if (url.pathname === location.pathname) return; // hash or query change on the same page
       e.preventDefault(); // next/link sees defaultPrevented and stands down
       if (mode.current !== 'idle') return;

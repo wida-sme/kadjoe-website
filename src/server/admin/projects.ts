@@ -274,10 +274,12 @@ export function reorderHero(ids: string[]) {
 }
 
 /** Photographs to choose hero images from: landscape, from published projects, newest first. */
+// The finance app groups these into project albums and filters them itself, so it needs every one.
+// shortcut: one capped list (3000 rows of ids and names); page it if the archive grows past that.
 export function heroCandidates(q?: string) {
   const where = [eq(projects.status, 'published'), eq(media.hidden, false), sql`${media.width} > ${media.height} * 1.2`];
   if (q?.trim()) where.push(like(projects.name, `%${q.trim()}%`));
   return db.select({ mediaId: media.id, projectId: projects.id, projectName: projects.name, location: projects.location })
     .from(media).innerJoin(projects, eq(projects.id, media.projectId))
-    .where(and(...where)).orderBy(desc(projects.sortDate), asc(media.position)).limit(240).all();
+    .where(and(...where)).orderBy(desc(projects.sortDate), asc(media.position)).limit(3000).all();
 }

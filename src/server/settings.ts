@@ -47,8 +47,23 @@ export const instagramSchema = z.object({
   autoPublish: z.boolean().default(true),
   lastSyncAt: z.string().nullable().default(null),
   lastError: z.string().nullable().default(null),
+  // Pending OAuth state; there is no website cookie to hold it any more. Valid for 10 minutes, once.
+  oauthState: z.string().nullable().default(null),
+  oauthStateAt: z.string().nullable().default(null),
 });
 export type InstagramState = z.infer<typeof instagramSchema>;
+
+// The company profile PDF's own photos and texts. null = take the website's (About page, Clients list)
+// or, for photos, choose one from the projects in the profile. Editing these never changes the website.
+const mediaId = z.string().regex(/^[A-Za-z0-9_-]{12}$/).nullable().default(null);
+export const profilePdfSchema = z.object({
+  coverMediaId: mediaId,
+  aboutMediaId: mediaId,
+  about: z.array(z.string().trim().min(1).max(700)).min(1).max(4).nullable().default(null),
+  services: z.array(z.object({ name: z.string().trim().min(1).max(40), text: z.string().trim().min(1).max(240) })).min(1).max(6).nullable().default(null),
+  clients: z.array(z.string().trim().min(1).max(60)).min(1).max(120).nullable().default(null),
+});
+export type ProfilePdf = z.infer<typeof profilePdfSchema>;
 
 function read<T>(key: string, schema: z.ZodType<T>, fallback: T): T {
   const row = db.select({ value: settings.value }).from(settings).where(eq(settings.key, key)).get();
@@ -66,5 +81,6 @@ export function write(key: string, value: unknown) {
 
 export const getContact = () => read('contact', contactSchema, DEFAULTS.contact);
 export const getClients = () => read('clients', clientsSchema, DEFAULTS.clients);
+export const getProfilePdf = () => read('profilePdf', profilePdfSchema, profilePdfSchema.parse({}));
 export const getInstagram = () => read('instagram', instagramSchema, instagramSchema.parse({}));
 export const setInstagram = (patch: Partial<InstagramState>) => write('instagram', { ...getInstagram(), ...patch });

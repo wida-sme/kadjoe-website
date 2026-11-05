@@ -1,9 +1,14 @@
 # Adds the website to the existing Kadjoe server stack (/srv/kadjoe, which already runs Caddy on the
-# `web` network). Add it to COMPOSE_FILE in /srv/kadjoe/.env, or deploy.sh's --remove-orphans deletes the site.
+# `web` network). Copy this file and Caddyfile.site to /srv/kadjoe/site/, then add it to COMPOSE_FILE in
+# /srv/kadjoe/.env (COMPOSE_FILE=compose.yml:site/compose.site.yml), or deploy.sh's --remove-orphans deletes the site.
+# Relative paths resolve from /srv/kadjoe, the folder of the first compose file.
 services:
   caddy:
     environment:
       SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN (e.g. kadjoe.com) in .env}
+    volumes:
+      # The finance Caddyfile ends with `import /etc/caddy/sites/*.caddy`.
+      - ./site/Caddyfile.site:/etc/caddy/sites/site.caddy:ro
   site:
     image: ${SITE_IMAGE:?set SITE_IMAGE (kadjoe-site:<git sha>) in .env}
     pull_policy: never
@@ -11,6 +16,9 @@ services:
     init: true
     environment:
       SITE_URL: ${SITE_URL:?set SITE_URL in .env}
+      SITE_ADMIN_TOKEN: ${SITE_ADMIN_TOKEN:?set SITE_ADMIN_TOKEN in .env}
+      # The finance app is at https://DOMAIN, already in the shared .env.
+      FINANCE_URL: https://${DOMAIN:?set DOMAIN in .env}
       IG_APP_ID: ${IG_APP_ID:-}
       IG_APP_SECRET: ${IG_APP_SECRET:-}
     volumes:

@@ -14,13 +14,11 @@ const nextConfig: NextConfig = {
   },
   // The PDF reads its fonts and logo from disk; make sure the standalone build carries them.
   outputFileTracingIncludes: {
-    '/api/admin/profile': ['./src/server/profile/fonts/**', './src/server/profile/*.png'],
+    '/api/internal/[op]': ['./src/server/profile/fonts/**', './src/server/profile/*.png'],
   },
   experimental: {
     // Unmatched URLs get a server-rendered 404 (src/app/global-not-found.tsx).
     globalNotFound: true,
-    // Dashboard uploads go through server actions; one photograph can be a 20 MB camera file.
-    serverActions: { bodySizeLimit: '32mb' },
   },
 };
 
