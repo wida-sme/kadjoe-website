@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { site } from '@/content/site';
+import { addressLine } from '@/lib/format';
 import type { Contact } from '@/server/settings';
 
 export function Footer({ contact }: { contact: Contact }) {
@@ -15,7 +16,7 @@ export function Footer({ contact }: { contact: Contact }) {
         <div className="footer__col footer__col--address">
           <span className="label">Office</span>
           <address style={{ fontStyle: 'normal' }}>
-            {contact.addressLines.map((l) => <span key={l} style={{ display: 'block' }}>{l}</span>)}
+            {contact.addressLines.map((l) => <span key={l} style={{ display: 'block' }}>{addressLine(l)}</span>)}
           </address>
           <a className="ul" href={contact.mapsUrl} target="_blank" rel="noopener">Open in Google Maps</a>
         </div>

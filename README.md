@@ -47,6 +47,8 @@ The site runs on http://localhost:3200; set `SITE_ADMIN_TOKEN` and `FINANCE_URL`
 it from a local finance app. The import
 reads the previous static site and the WordPress backup (both read-only) into `data/`: 112 projects,
 1,758 photographs, 27 design studios. It splits the two M House projects the old scraper had merged.
+The backup is optional: leave out `--wp-zip` on a machine without it and the import uses the static
+site's own copies of the photographs (long edge 1440 px at most, so softer than the originals).
 
 `npm run media:warm` cuts the common image sizes ahead of time (add `--all` for every gallery).
 `npm test` runs the Instagram caption and matching tests.

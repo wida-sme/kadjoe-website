@@ -1,24 +1,32 @@
-import Image from 'next/image';
+import Image, { getImageProps } from 'next/image';
 import type { Photo } from '@/server/site/queries';
 
 /** A photograph in a frame. The frame's CSS gives the size (aspect ratio); the image fills it,
- *  cropped around the focal point set in the dashboard. */
+ *  cropped around the focal point set in the dashboard. With `phone`, phones get that one width
+ *  whatever their pixel density (a page's lead photograph stays light there); larger screens pick
+ *  from the srcset as usual. */
 export function Pic({
-  photo, alt, sizes, className = '', priority = false, critical = false,
-}: { photo: Photo; alt: string; sizes: string; className?: string; priority?: boolean; critical?: boolean }) {
+  photo, alt, sizes, className = '', priority = false, critical = false, phone,
+}: { photo: Photo; alt: string; sizes: string; className?: string; priority?: boolean; critical?: boolean; phone?: number }) {
+  const props = {
+    src: `/media/${photo.id}`,
+    alt,
+    fill: true,
+    sizes,
+    placeholder: photo.blur ? ('blur' as const) : ('empty' as const),
+    blurDataURL: photo.blur,
+    style: { objectPosition: `${Math.round(photo.focalX * 100)}% ${Math.round(photo.focalY * 100)}%` },
+    ...(priority ? { loading: 'eager' as const, fetchPriority: 'high' as const } : {}),
+    ...(critical ? { 'data-critical': '' } : {}),
+  };
+  if (!phone) return <div className={`photo ${className}`}><Image {...props} alt={alt} /></div>;
+  const { props: { srcSet, sizes: wide, ...img } } = getImageProps(props);
   return (
     <div className={`photo ${className}`}>
-      <Image
-        src={`/media/${photo.id}`}
-        alt={alt}
-        fill
-        sizes={sizes}
-        placeholder={photo.blur ? 'blur' : 'empty'}
-        blurDataURL={photo.blur}
-        style={{ objectPosition: `${Math.round(photo.focalX * 100)}% ${Math.round(photo.focalY * 100)}%` }}
-        {...(priority ? { loading: 'eager' as const, fetchPriority: 'high' as const } : {})}
-        {...(critical ? { 'data-critical': '' } : {})}
-      />
+      <picture>
+        <source media="(min-width: 768px)" srcSet={srcSet} sizes={wide} />
+        <img {...img} alt={alt} src={`/media/${photo.id}/${phone}.webp`} />
+      </picture>
     </div>
   );
 }
