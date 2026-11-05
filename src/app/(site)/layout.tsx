@@ -44,10 +44,11 @@ export default function SiteLayout({ children }: LayoutProps<'/'>) {
       <a className="skip-link" href="#main">Skip to content</a>
       <div id="curtain" aria-hidden="true">
         <div className="curtain__panel">
-          <div className="curtain__tb" data-curtain-tb>
-            <span className="curtain__cell"><span className="curtain__k">Sheet</span><span className="curtain__v" data-curtain-sheet /></span>
-            <span className="curtain__cell curtain__cell--title"><span className="curtain__k">Title</span><span className="curtain__v curtain__label" data-curtain-label /></span>
-            <span className="curtain__cell"><span className="curtain__k">Build</span><span className="curtain__v">Kadjoe</span></span>
+          <div className="curtain__inner" data-curtain-tb>
+            <span className="curtain__mark" />
+            <span className="curtain__title"><span className="curtain__label" data-curtain-label /></span>
+            <span className="curtain__rule" />
+            <span className="curtain__no">N° <span data-curtain-sheet /></span>
           </div>
         </div>
       </div>

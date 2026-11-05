@@ -1,24 +1,15 @@
-import localFont from 'next/font/local';
+import { Cormorant_Garamond, Jost } from 'next/font/google';
 
-// Switzer (Fontshare, FFL): display and text. IBM Plex Mono (OFL): title-block lettering, the face
-// closest to Kadjoe's monospaced wordmark. Self-hosted woff2, latin only. Only the weights the site
-// sets are declared: next/font preloads every one, ahead of the hero photograph on a slow phone.
-// (The company profile PDF has its own TTFs, Plex Mono Medium included.)
-export const switzer = localFont({
-  src: [
-    { path: '../fonts/switzer-300-normal.woff2', weight: '300', style: 'normal' },
-    { path: '../fonts/switzer-400-normal.woff2', weight: '400', style: 'normal' },
-  ],
-  variable: '--font-switzer',
-  display: 'swap',
-  fallback: ['Helvetica Neue', 'Arial', 'sans-serif'],
+// Two faces, as on the old site (../kadjoe-website): Cormorant Garamond for the hero, titles and names,
+// Jost for text and the capital labels. next/font self-hosts them at build time, latin only. The
+// italic is only used in the home hero, so it is not preloaded on every page. The earlier faces
+// (Switzer, IBM Plex Mono, Zodiak) are still in src/fonts.
+export const cormorant = Cormorant_Garamond({
+  subsets: ['latin'], weight: ['300', '400', '500'], variable: '--font-cormorant', display: 'swap',
 });
 
-export const plexMono = localFont({
-  src: [
-    { path: '../fonts/plex-mono-400-normal.woff2', weight: '400', style: 'normal' },
-  ],
-  variable: '--font-plex-mono',
-  display: 'swap',
-  fallback: ['ui-monospace', 'Menlo', 'monospace'],
+export const cormorantItalic = Cormorant_Garamond({
+  subsets: ['latin'], weight: ['400', '500'], style: 'italic', variable: '--font-cormorant-it', display: 'swap', preload: false,
 });
+
+export const jost = Jost({ subsets: ['latin'], variable: '--font-jost', display: 'swap' });

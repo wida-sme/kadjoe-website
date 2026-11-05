@@ -1,9 +1,12 @@
 // Declarative motion through data attributes. Authoring happens in markup:
 //   data-split="lines|words|chars"   masked text reveal (SplitText), on scroll or on intro
 //   data-reveal="up|fade|clip|scale"  block reveal
+//   data-duration="0.4"              reveal length (seconds) instead of the kind's own
 //   data-intro                        play with the page intro instead of on scroll
 //   data-delay="0.2"                  extra delay (seconds)
 //   data-parallax="0.15"              scrubbed vertical drift (fraction of element height)
+//   data-rise                         scrubbed arrival: faint, a touch large and low, settling while its parent
+//                                     scrolls in, done when the parent's foot reaches the screen's foot
 // Every effect is skipped under reduced motion; CSS keeps content visible without JS.
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -57,17 +60,19 @@ function blockTween(el: HTMLElement, paused: boolean) {
     : kind === 'clip' ? { clipPath: 'inset(0% 0% 100% 0%)', autoAlpha: 1 }
     : kind === 'scale' ? { scale: 1.08, clipPath: 'inset(8% 8% 8% 8%)', autoAlpha: 1 }
     : { y: 32, autoAlpha: 0 };
-  const to: gsap.TweenVars = kind === 'clip' || kind === 'scale' ? { clipPath: 'inset(0% 0% 0% 0%)', scale: 1 } : {};
+  const clips = kind === 'clip' || kind === 'scale';
+  const to: gsap.TweenVars = clips ? { clipPath: 'inset(0% 0% 0% 0%)', scale: 1 } : {};
   gsap.set(el, { visibility: 'visible' });
   return gsap.fromTo(el, from, {
     ...to,
     y: 0,
     autoAlpha: 1,
-    duration: kind === 'fade' ? 1 : 1.2,
+    duration: el.dataset.duration ? parseFloat(el.dataset.duration) : kind === 'fade' ? 1 : 1.2,
     ease: ease.out,
     delay,
     paused,
-    clearProps: kind === 'clip' || kind === 'scale' ? 'clipPath,scale' : undefined,
+    // Only when there is something to clear: GSAP splits clearProps, so an undefined value throws.
+    ...(clips ? { clearProps: 'clipPath,scale' } : {}),
     scrollTrigger: paused ? undefined : { trigger: el, start: 'top 92%', once: true },
   });
 }
@@ -91,6 +96,14 @@ export function initReveals(root: ParentNode = document, instant = false) {
     const isIntro = el.hasAttribute('data-intro');
     const t = blockTween(el, isIntro);
     if (isIntro) intro.add(() => { t.play(); }, 0);
+  });
+  root.querySelectorAll<HTMLElement>('[data-rise]').forEach((el) => {
+    gsap.fromTo(el, { autoAlpha: 0.2, scale: 1.06, y: 60, transformOrigin: '50% 100%' }, {
+      autoAlpha: 1, scale: 1, y: 0, ease: 'none',
+      // Measured on the parent: the element's own offset (y: 60) would push its end past the page and it would
+      // never settle.
+      scrollTrigger: { trigger: el.parentElement || el, start: 'top bottom', end: 'bottom bottom', scrub: 0.8 },
+    });
   });
   root.querySelectorAll<HTMLElement>('[data-parallax]').forEach((el) => {
     const amount = parseFloat(el.dataset.parallax || '0.15');

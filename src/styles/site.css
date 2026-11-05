@@ -65,7 +65,7 @@
   position: fixed; inset: 0 0 auto 0; z-index: var(--z-header); height: var(--header-h);
   display: flex; align-items: center; justify-content: space-between; gap: 24px;
   padding-inline: var(--gutter); background: var(--c-bg); border-bottom: 1px solid var(--c-line);
-  transition: translate 0.6s var(--ease-out);
+  transition: translate 0.6s var(--ease-out), background-color 0.45s var(--ease-out), color 0.45s var(--ease-out), border-color 0.45s var(--ease-out);
 }
 html.frame-away .header { translate: 0 -101%; }
 .header__logo { --logo-w: clamp(118px, 9.4vw, 146px); position: relative; display: block; padding-block: 8px; }
@@ -131,43 +131,61 @@ html.frame-away .header { translate: 0 -101%; }
    over the photograph and ink over the paper; src/components/site/HeroSheet.tsx moves it and wipes
    each title-block value where it passes. */
 
-.hero {
-  --tb-w: clamp(320px, 27vw, 440px);
-  display: grid; grid-template-rows: 1fr; min-height: max(660px, min(100svh, 1120px));
-  padding: calc(var(--header-h) + var(--gutter)) var(--gutter) var(--gutter);
-}
-/* The sheet fills the screen; if a title block cannot fit (a short screen), the sheet grows with it
-   rather than letting it overflow. */
-.hero__sheet { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) var(--tb-w); grid-template-rows: 1fr; }
-.hero__stage { position: relative; overflow: hidden; background: var(--c-photo); }
+/* The photograph fills the screen, edge to edge, under the header strip. The title block lies on the
+   photograph's lower edge, lettered in the divider sheets' light ink over a graphite scrim. */
+.hero { position: relative; height: 100svh; min-height: 480px; overflow: hidden; background: var(--c-sheet); }
+.hero__stage { position: absolute; inset: 0; overflow: hidden; background: var(--c-photo); }
 .hero__slide { position: absolute; inset: 0; }
 .hero__slide img { width: 100%; height: 100%; object-fit: cover; }
 .hero__slide:not([data-active]) { visibility: hidden; }
 .hero__link { position: absolute; inset: 0; z-index: 2; cursor: pointer; }
+/* Two scrims: a light one under the header strip, a deep one under the title block. They sit above
+   every slide, the incoming one too (z-index 1 during a change), and under the rule. */
+.hero__stage::before, .hero__stage::after { content: ''; position: absolute; inset-inline: 0; z-index: 2; pointer-events: none; }
+.hero__stage::before { top: 0; height: calc(var(--header-h) * 2.6); background: linear-gradient(rgb(28 27 26 / 0.62), rgb(28 27 26 / 0.3) 45%, rgb(28 27 26 / 0)); }
+/* Only as deep as the title block needs (its small text stays above 7:1 on every hero photograph), so the
+   rest of the photograph keeps its colour. Eased stops, near black: no grey veil. */
+.hero__stage::after {
+  bottom: 0; height: min(42%, 380px);
+  background: linear-gradient(rgb(10 9 8 / 0), rgb(10 9 8 / 0.04) 20%, rgb(10 9 8 / 0.14) 35%, rgb(10 9 8 / 0.32) 50%, rgb(10 9 8 / 0.5) 62%, rgb(10 9 8 / 0.66));
+}
 .hero__rule {
   position: absolute; left: 0; right: 0; top: -1px; z-index: 3; height: 3px; pointer-events: none; opacity: 0;
   border-top: 1px solid currentColor; border-bottom: 1px solid currentColor; will-change: transform;
 }
-.hero__rule--photo { color: rgb(255 255 255 / 0.92); filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.35)); }
-.hero__rule--tb { color: var(--c-fg); }
-.hero__track { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
-
-/* The title block. The project is lettered as the sheet's title; the sheet number, in the corner
-   above the controls, as large as a drawing's. Every value has a fixed height, so a longer one never
-   moves the cells under it while the sheet changes. */
-.hero__tb {
-  position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto auto;
-  border-top: 1px solid var(--c-line-strong); border-right: 1px solid var(--c-line);
+.hero__strip {
+  /* The strip's own tokens: every rule inside it (labels, hairlines, focus, buttons) reads light. */
+  --c-fg: var(--c-on-sheet); --c-accent: var(--c-on-sheet); --c-muted: var(--c-on-sheet-muted);
+  --c-line: var(--c-sheet-line); --c-line-strong: rgb(237 237 234 / 0.5);
+  position: absolute; inset: auto var(--gutter) 0; z-index: 4; color: var(--c-fg);
+  display: grid;
+  grid-template-columns: minmax(76px, 0.7fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 2fr) minmax(76px, 0.7fr) minmax(184px, 1.8fr);
+  border-top: 1px solid var(--c-line);
+  padding-bottom: env(safe-area-inset-bottom);
 }
-.hero__cell { min-width: 0; padding: 14px 18px 16px; border-top: 1px solid var(--c-line); display: grid; align-content: start; gap: 10px; }
-.hero__cell--title, .hero__cell--project, .hero__cell--design, .hero__cell--sheet, .hero__cell--controls { grid-column: 1 / -1; }
-.hero__cell--title { border-top: 0; padding-block: 16px 22px; }
-.hero__cell--year { border-left: 1px solid var(--c-line); }
-.hero__cell--project { grid-template-rows: auto minmax(0, 1fr); align-content: stretch; }
-.hero__cell--sheet { gap: 8px; }
-.hero__title { font-size: clamp(1.25rem, 0.85rem + 0.9vw, 1.875rem); font-weight: 300; letter-spacing: -0.022em; line-height: 1.12; max-width: 17ch; }
-
+.hero__cell { min-width: 0; padding: 16px 16px 22px; border-left: 1px solid var(--c-line); display: grid; align-content: start; gap: 8px; }
+.hero__cell:first-child { border-left: 0; padding-left: 0; }
+/* The headline stands at the centre of the photograph, over a soft pool of graphite. It lets clicks
+   through, so the photograph still opens its project. */
+.hero__center {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  display: grid; place-items: center; padding: var(--header-h) var(--gutter) 120px;
+  /* A tight pool around the headline only (above 3:1 on every hero photograph); the lower photograph stays clear. */
+  background: radial-gradient(ellipse 50% 28% at 50% 46%, rgb(10 9 8 / 0.7), rgb(10 9 8 / 0.38) 55%, rgb(10 9 8 / 0));
+}
+.hero__title {
+  color: var(--c-on-sheet); display: grid; justify-items: start; width: fit-content; max-width: 100%;
+  font-family: var(--f-display); font-size: clamp(2.8rem, 0.4rem + 5.6vw, 8rem); font-weight: 300; letter-spacing: -0.03em; line-height: 0.95;
+  text-shadow: 0 1px 2px rgb(10 9 8 / 0.3), 0 0 32px rgb(10 9 8 / 0.4);
+}
+/* Each line rises out of its own mask; the masks keep descenders. */
+.hero__line { display: block; overflow: clip; padding-block: 0.04em 0.1em; }
+.hero__line > span { display: block; }
+.hero__title em { font-style: italic; letter-spacing: -0.035em; }
+.motion .hero__line > span { visibility: hidden; }
+/* The second line steps right, as an offset dimension does on a drawing. Optical indent on the first. */
+.hero__line:first-child { margin-left: -0.06em; }
+.hero__line--2 { margin-left: 2.4em; }
 .hero__value { display: grid; overflow: clip; font-size: var(--t-s); line-height: 1.35; }
 .hero__value > * { grid-area: 1 / 1; min-width: 0; padding-block: 2px; }
 /* Between changes the back buffer is hidden; while the rule passes both show, each clipped to its side. */
@@ -213,34 +231,30 @@ html.frame-away .header { translate: 0 -101%; }
 .hero__progress { height: 1px; background: var(--c-line-strong); position: relative; overflow: hidden; margin: 14px -18px 0; }
 .hero__progress span { position: absolute; inset: 0; background: var(--c-fg); transform: scaleX(0); transform-origin: left; }
 
-/* Short laptop screens: the design credit gives way so the title block keeps its proportions. */
-@media (min-width: 1024px) and (max-height: 880px) { .hero__cell--design { display: none; } }
+/* The header strip goes clear over the photograph and takes the light ink; past the hero it is
+   paper again (html.past-hero, set by HeroSheet). :has() keeps the first paint right, before JS. */
+html:has(.hero):not(.past-hero) .header {
+  --c-accent: var(--c-on-sheet);
+  background-color: transparent; color: var(--c-on-sheet); border-bottom-color: var(--c-sheet-line);
+}
+/* Over the photograph the thin logo and the light links get a soft shadow of their own. */
+html:has(.hero):not(.past-hero) .header .logo { filter: drop-shadow(0 1px 6px rgb(10 9 8 / 0.5)); }
+html:has(.hero):not(.past-hero) .nav__link, html:has(.hero):not(.past-hero) .menu-btn { text-shadow: 0 1px 10px rgb(10 9 8 / 0.45); }
 
-/* Narrow screens: the title block under the photograph, project and sheet number side by side. */
-@media (max-width: 1023px) {
-  .hero { min-height: 0; padding-bottom: 0; }
-  .hero__sheet { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
-  .hero__stage { aspect-ratio: 3 / 2; }
-  .hero__tb { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: none; border-top: 0; border-right: 0; }
-  .hero__cell { padding: 14px 16px 16px 0; }
-  .hero__cell--title { grid-row: 1; padding-block: 20px 24px; }
-  .hero__cell--project { grid-row: 2; grid-column: 1; }
-  .hero__cell--sheet { grid-row: 2; grid-column: 2; border-left: 1px solid var(--c-line); padding: 14px 0 16px 16px; }
-  .hero__cell--location { grid-row: 3; grid-column: 1; }
-  .hero__cell--year { grid-row: 3; grid-column: 2; padding: 14px 0 16px 16px; }
-  .hero__cell--design { grid-row: 4; }
-  .hero__cell--controls { grid-row: 5; padding-right: 0; padding-bottom: 0; }
-  .hero__progress { margin-inline: 0; }
-  .hero__name { font-size: clamp(2rem, 1.3rem + 2.6vw, 2.75rem); height: calc(2lh + 0.08em); }
-  .hero__name > * { -webkit-line-clamp: 2; line-clamp: 2; }
-  .hero__no { font-size: clamp(2rem, 1.3rem + 2.6vw, 2.75rem); align-self: end; }
-  .hero__cell--sheet { align-content: space-between; }
+@media (max-width: 1180px) {
+  .hero__strip { grid-template-columns: minmax(0, 2.4fr) minmax(0, 2.4fr) minmax(190px, 2fr); }
+  .hero__cell--location, .hero__cell--year, .hero__cell--sheet { display: none; }
+  .hero__cell--project { border-left: 0; padding-left: 0; }
 }
 @media (max-width: 767px) {
-  .hero { padding-top: calc(var(--header-h) + 12px); }
-  .hero__stage { aspect-ratio: 4 / 5; max-height: 64svh; width: 100%; }
-  .hero__title { font-size: clamp(1.5rem, 6vw, 1.875rem); }
-  .hero__cell--design { display: none; }
+  .hero__strip { grid-template-columns: minmax(0, 1fr) auto; }
+  .hero__cell--location, .hero__cell--design, .hero__cell--year, .hero__cell--sheet { display: none; }
+  .hero__cell--project { border-left: 0; padding-left: 0; }
+  .hero__cell--project, .hero__cell--controls { padding-block: 12px 16px; }
+  .hero__center { padding-bottom: 96px; }
+  /* Small enough that "and unmatched" stays on one line down to a 360 px phone. */
+  .hero__title { font-size: clamp(2.4rem, 11.5vw, 3.75rem); width: 100%; }
+  .hero__line--2 { margin-left: 0.9em; }
 }
 
 /* ---------- Home sections ---------- */
@@ -350,26 +364,64 @@ html.frame-away .header { translate: 0 -101%; }
 
 /* ---------- Footer: the back cover ---------- */
 
-.footer { background: var(--c-sheet); color: var(--c-on-sheet); padding: clamp(72px, 9vw, 140px) var(--gutter) calc(var(--gutter) + env(safe-area-inset-bottom)); }
-.footer ::selection { background: var(--c-on-sheet); color: var(--c-sheet); }
-.footer :focus-visible { outline-color: var(--c-on-sheet); }
-.footer__word {
-  display: flex; justify-content: space-between; font-family: var(--f-mono); font-weight: 400; line-height: 0.8;
-  font-size: clamp(3rem, 14.6vw, 17rem); letter-spacing: 0; margin-bottom: clamp(56px, 7vw, 110px);
+/* Kadjoe's black. A quiet brand block left (logo, one small line of tagline, copyright); three columns with serif
+   headings right; an architect's drawing in white on the same pure black, so it has no edge. From 601 px the words
+   and the drawing share one cell: the drawing sits at the foot and its empty sky runs up behind the columns, so
+   the links stand inside the drawing, between its dimension lines and notes, instead of above a picture. */
+.footer {
+  --c-fg: var(--c-on-sheet); --c-muted: var(--c-on-sheet-muted); --c-accent: var(--c-on-sheet);
+  --art-h: max(240px, 35.55vw); /* 711 / 2000: the drawing at full width, never cropped above 675 px */
+  background: var(--c-sheet); color: var(--c-fg); padding-top: clamp(56px, 6vw, 88px); overflow: hidden;
+  display: grid;
 }
-.footer__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); row-gap: 40px; padding-top: 22px; border-top: 1px solid var(--c-sheet-line); }
-.footer__col { display: grid; align-content: start; gap: 10px; font-size: var(--t-s); line-height: 1.5; }
-.footer__col .label { color: var(--c-on-sheet-muted); margin-bottom: 4px; }
-.footer__col--address { grid-column: 1 / span 4; }
-.footer__col--contact { grid-column: 6 / span 3; }
-.footer__col--pages { grid-column: 10 / span 3; }
-.footer__col a { justify-self: start; display: inline-block; padding-block: 3px; transition: translate 0.45s var(--ease-out), color 0.3s; }
-.footer__col a.ul { background: linear-gradient(currentColor 0 0) left 100% / 100% 1px no-repeat; padding-bottom: 1px; }
-@media (hover: hover) { .footer__col a:hover { translate: 6px 0; } }
-.footer__col a:focus-visible { translate: 6px 0; }
-.footer__legal { margin-top: clamp(56px, 7vw, 100px); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-family: var(--f-mono); font-size: var(--t-label); letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-on-sheet-muted); }
-@media (max-width: 767px) {
-  .footer__col--address, .footer__col--contact, .footer__col--pages { grid-column: 1 / -1; }
+.footer > * { grid-area: 1 / 1; }
+.footer__top { position: relative; z-index: 1; align-self: start; }
+.footer ::selection { background: var(--c-on-sheet); color: var(--c-sheet); }
+.footer__top { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 48px var(--gutter); padding-inline: var(--gutter); }
+.footer__top { padding-bottom: calc(var(--art-h) * 0.86); } /* the drawing's top 14 % runs up behind the words, beside the columns */
+/* The brand block is the KADJOE logo alone, level with the columns' serif headings. */
+.footer__brand { grid-column: 1 / span 5; display: grid; align-content: start; justify-items: start; gap: 18px; }
+.footer .logo { width: clamp(180px, 15vw, 240px); }
+.footer__logo { transition: opacity 0.3s var(--ease-out), translate 0.45s var(--ease-out); }
+/* The copyright signs the drawing, bottom right on its dark ground, as a title block would. */
+.footer__legal {
+  position: relative; z-index: 1; align-self: end; justify-self: end;
+  padding: 0 var(--gutter) calc(clamp(20px, 2.4vw, 32px) + env(safe-area-inset-bottom));
+  font-size: var(--t-xs); color: var(--c-muted); text-align: right;
+}
+.footer__cols { grid-column: 7 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px var(--gutter); }
+.footer__col { display: grid; align-content: start; justify-items: start; gap: 6px; font-size: var(--t-s); line-height: 1.5; }
+.footer__head { margin-bottom: 8px; font-family: var(--f-display); font-weight: 500; font-size: 1.375rem; line-height: 1.2; }
+.footer__col address { font-style: normal; color: var(--c-muted); }
+.footer__col address span { display: block; }
+.footer__col a { display: inline-block; padding-block: 3px; transition: color 0.3s var(--ease-out), translate 0.45s var(--ease-out); }
+@media (hover: hover) {
+  .footer__col a:hover { color: var(--c-muted); translate: 4px 0; }
+  .footer__logo:hover { opacity: 0.6; }
+}
+.footer__col a:active, .footer__logo:active { translate: 0 1px; }
+/* The drawing keeps its proportions (2000 × 711). Height, not aspect-ratio: with aspect-ratio the 240 px minimum
+   would force a box wider than the screen.
+   Phones (the <source> media query) get a narrower crop, the corner of the house and the site beside it, at its
+   own proportions. */
+.footer__art { align-self: end; height: var(--art-h); padding-bottom: env(safe-area-inset-bottom); }
+.footer__art picture { display: contents; }
+.footer__art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 30% 100%; }
+/* The house leans left, away from the columns: the drawing slides 12 % left; its right edge is the same black. */
+@media (min-width: 601px) { .footer__art img { translate: -12% 0; } }
+@media (max-width: 900px) {
+  .footer__brand, .footer__cols { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+  /* Phones: one column of words is too tall to stand in the drawing, so the drawing follows it. */
+  .footer { display: block; }
+  .footer__top { padding-bottom: 0; }
+  .footer__art { height: auto; margin-top: 40px; }
+  .footer__legal { padding-top: 16px; text-align: left; }
+  .footer__art img { height: auto; }
+}
+@media (max-width: 560px) {
+  .footer__cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* ---------- Page heads ---------- */
@@ -564,4 +616,103 @@ html.frame-away .toolbar { top: 0; }
 @media (prefers-reduced-motion: reduce) {
   .cap__name, .cat__name, .names a, .reg-row, .next__name, .footer__col a, .prow__projects a { translate: none !important; }
   .card-link:hover .cap__name, .cat:hover .cat__name, .next__row:hover .next__name { text-decoration: underline; text-underline-offset: 0.18em; text-decoration-thickness: 1px; }
+}
+
+/* ---------- Type: Cormorant Garamond and Jost ---------- */
+/* Two faces, as on the old site and its hero. Cormorant Garamond: Light for the largest titles, Regular
+   for longer display text (easier to read), Medium for names at small sizes. Jost for text and the
+   capital labels with wide spacing. Serif display faces need no negative tracking. */
+.display, .hero__title, .cat__name, .contact__mail, .menu__links a, .nf-menu__panel a {
+  font-family: var(--f-display); font-weight: 300; letter-spacing: 0.004em;
+}
+.h2, .statement__text, .prow__name, .about-lead__text { font-family: var(--f-display); font-weight: 400; letter-spacing: 0.004em; }
+.cap__name, .reg-row__name, .service__name { font-family: var(--f-display); font-weight: 500; letter-spacing: 0.004em; }
+.hero__title em { letter-spacing: 0; }
+.label, .cap__meta, .lightbox button { letter-spacing: 0.22em; }
+
+/* ---------- Hero, as on the old site (HeroClassic) ---------- */
+/* Layout, type and motion copied from ../kadjoe-website. The contrast is the current one: a light scrim
+   under the header, a tight pool behind the centred words, a short deep band behind the caption. No
+   full-frame veil, so the photographs keep their colour. */
+.hc { --hc-ease: cubic-bezier(0.22, 0.61, 0.21, 1); --hc-gold: var(--c-gold); min-height: 640px; }
+.hc__slide { position: absolute; inset: 0; z-index: 1; opacity: 0; transition: opacity 2.4s var(--hc-ease); }
+.hc__slide[data-on] { z-index: 2; opacity: 1; }
+.hc__slide img { object-fit: cover; animation: hc-kenburns 16s linear forwards; }
+@keyframes hc-kenburns { from { transform: scale(1); } to { transform: scale(1.055); } }
+
+.hc::before, .hc::after { content: ''; position: absolute; inset-inline: 0; z-index: 3; pointer-events: none; }
+/* Under the header: deep enough that the logo and the links read on every hero photograph (above 7:1). */
+.hc::before { top: 0; height: calc(var(--header-h) * 3); background: linear-gradient(rgb(10 9 8 / 0.72), rgb(10 9 8 / 0.5) 40%, rgb(10 9 8 / 0.18) 75%, rgb(10 9 8 / 0)); }
+.hc::after {
+  bottom: 0; height: min(42%, 380px);
+  background: linear-gradient(rgb(10 9 8 / 0), rgb(10 9 8 / 0.04) 20%, rgb(10 9 8 / 0.14) 35%, rgb(10 9 8 / 0.32) 50%, rgb(10 9 8 / 0.5) 62%, rgb(10 9 8 / 0.66));
+}
+
+.hc__content {
+  position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 0 6vw; text-align: center; color: #fff; pointer-events: none;
+  /* Covers kicker, tagline and link: each passes its contrast (4.5:1 small, 3:1 large) on every hero photograph. */
+  background: radial-gradient(ellipse 56% 42% at 50% 50%, rgb(10 9 8 / 0.76), rgb(10 9 8 / 0.62) 45%, rgb(10 9 8 / 0.3) 75%, rgb(10 9 8 / 0));
+}
+.hc__content a { pointer-events: auto; }
+.hc__kicker {
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+  font-family: var(--f-sans); font-size: 12px; font-weight: 400; letter-spacing: 0.42em; text-transform: uppercase;
+  color: rgb(255 255 255 / 0.9); text-shadow: 0 2px 34px rgb(8 6 4 / 0.45); /* old site: 0.72, too faint on bright photographs */
+}
+.hc__kicker::before, .hc__kicker::after { content: ''; width: 44px; height: 1px; background: var(--hc-gold); flex: none; }
+.hc__title {
+  margin: 34px 0 46px; font-family: var(--font-cormorant), Georgia, serif; font-size: clamp(46px, 7vw, 112px);
+  font-weight: 300; line-height: 1.06; letter-spacing: 0.004em; text-wrap: balance; text-shadow: 0 2px 34px rgb(8 6 4 / 0.45);
+}
+/* Each line rises out of its own mask on entrance; the padding (taken back by the margin) keeps the
+   italic's overhang and the descenders inside the mask. Hidden only until the entrance plays. */
+.hc__line { display: block; overflow: clip; padding: 0.04em 0.12em 0.16em; margin: -0.04em -0.12em -0.16em; }
+.hc__line > span { display: block; }
+.motion .hc__kicker, .motion .hc__cta, .motion .hc__meta, .motion .hc__cue, .motion .hc__line > span { visibility: hidden; }
+.hc__title em { font-family: var(--font-cormorant-it), Georgia, serif; font-style: italic; font-weight: 500; letter-spacing: 0.01em; color: var(--hc-gold); }
+.hc__cta {
+  display: inline-flex; align-items: center; gap: 12px; color: #fff;
+  font-family: var(--f-sans); font-size: 12px; font-weight: 400; letter-spacing: 0.34em; text-transform: uppercase;
+}
+/* The arrow's shaft grows from 52 to 76 px on hover: drawn at 76 px and scaled, so only transform moves. */
+.hc__arrow { position: relative; display: inline-block; width: 76px; height: 1px; margin-right: -24px; }
+.hc__arrow::before { content: ''; position: absolute; inset: 0; background: currentColor; transform: scaleX(0.684); transform-origin: left; transition: transform 0.45s var(--hc-ease); }
+.hc__arrow::after {
+  content: ''; position: absolute; right: 0; top: -3.5px; width: 9px; height: 9px; border-top: 1px solid currentColor; border-right: 1px solid currentColor;
+  transform: translateX(-24px) rotate(45deg) scale(0.78); transition: transform 0.45s var(--hc-ease);
+}
+@media (hover: hover) {
+  .hc__cta:hover .hc__arrow::before { transform: none; }
+  .hc__cta:hover .hc__arrow::after { transform: rotate(45deg) scale(0.78); }
+}
+.hc a:focus-visible, .hc button:focus-visible { outline-color: var(--hc-gold); }
+
+.hc__meta {
+  position: absolute; right: max(2.5vw, calc((100vw - 1560px) / 2)); bottom: 7vh; z-index: 6; text-align: right;
+  font-family: var(--f-sans); font-size: 11.5px; letter-spacing: 0.24em; text-transform: uppercase; line-height: 2; color: rgb(255 255 255 / 0.75);
+}
+.hc__name { font-family: var(--font-cormorant-it), Georgia, serif; font-style: italic; font-weight: 400; font-size: 15px; letter-spacing: 0.06em; text-transform: none; color: #fff; }
+.hc__dots { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+.hc__dots button { display: block; width: 34px; height: 14px; padding: 6px 0; }
+.hc__dots button::before { content: ''; display: block; height: 1.5px; background: rgb(255 255 255 / 0.28); transition: background-color 0.4s var(--hc-ease); }
+.hc__dots button[aria-current]::before { background: var(--hc-gold); }
+
+.hc__cue { position: absolute; left: 50%; bottom: 26px; z-index: 6; width: 1px; height: 56px; overflow: hidden; transform: translateX(-50%); }
+.hc__cue::before { content: ''; position: absolute; inset: 0 0 auto; height: 50%; background: rgb(255 255 255 / 0.75); transform: translateY(-100%); animation: hc-cue 2.1s var(--hc-ease) infinite; }
+@keyframes hc-cue { 60%, 100% { transform: translateY(200%); } }
+
+@media (max-width: 900px) {
+  .hc__title { max-width: 12ch; }
+  .hc__meta { display: none; }
+}
+/* Phones: the words fill the width, so the pool does too; the kicker drops its rules and breaks in two. */
+@media (max-width: 620px) {
+  .hc__content { background: radial-gradient(ellipse 100% 48% at 50% 50%, rgb(10 9 8 / 0.78), rgb(10 9 8 / 0.62) 50%, rgb(10 9 8 / 0.3) 80%, rgb(10 9 8 / 0)); }
+  .hc__kicker { letter-spacing: 0.3em; text-wrap: balance; }
+  .hc__kicker::before, .hc__kicker::after { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc__slide { transition: none; }
+  .hc__slide img, .hc__cue::before { animation: none; }
 }

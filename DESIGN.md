@@ -61,17 +61,19 @@ Screenshot:  an interior photograph filling the drawing area of a paper sheet, t
 | ink (graphite) | `#1C1B1A` | Kadjoe's charcoal from the company profile (`#231F20`), a touch deeper |
 | muted | `#6A6762` | 5.1:1 on paper |
 | line | `rgb(28 27 26 / 0.16)` | hairlines, title block rules |
-| sheet (dark) | `#1C1B1A` | divider sheets: curtain, loader, footer (as in the company profile) |
+| sheet (dark) | `#000000` | Kadjoe's black, for every dark sheet: curtain, loader, menu, lightbox, footer (the footer drawing is white ink on pure black) |
 | on-sheet | `#EDEDEA`, muted `#A09C96` | 14.7:1 and 6.3:1 |
 
 No accent colour. Focus rings are 2 px at a 3 px offset: ink on paper and paper on the dark sheet.
 
 ### Type
 
-- **Switzer** (Fontshare, FFL): display at 300 with negative tracking, text at 400. A neutral Swiss
-  grotesk lets the interiors lead; at Light and large it reads quiet and expensive. Only the weights
-  the site sets are loaded (300, 400; Plex Mono 400): next/font preloads each one ahead of the hero
-  photograph.
+- **Switzer** (Fontshare, FFL): display at 300 with negative tracking, text at 400, emphasis 500.
+- **Zodiak** (Fontshare, FFL), 300 roman and italic: the home hero headline only (4 Nov 2026). Its hairline
+  strokes read like a drafting pen; the italic carries the tagline's two qualities ("subtle luxe",
+  "unmatched quality."). The database's luxury defaults (Cinzel, Playfair, Cormorant) were rejected as
+  generic. Token `--f-display`.
+  A neutral Swiss grotesk lets the interiors lead; at Light and large it reads quiet and expensive.
 - **IBM Plex Mono** (Google, OFL): title block labels, counters, years, the footer wordmark. Chosen
   because Kadjoe's own wordmark is a light monospaced face with Plex's slab-spurred D and J. This is
   the one reason mono appears, and it appears only where a drawing would use technical lettering.
@@ -123,28 +125,23 @@ marks the end of a sheet: above the footer and under the case-page title block.
 ### Home
 ```
 ┌ header strip: [shield] KADJOE ........................ Projects  Design partners  About Us  Contact ┐
-├──────────────────────────────────────────────────────────────────┬───────────────────────────────┤
-│                                                                  │ The balance of subtle luxe    │  h1, Kadjoe's
-│                                                                  │ and unmatched quality.        │  sentence
-│                                                                  ├───────────────────────────────┤
-│                                                                  │ PROJECT                       │
-│            DRAWING AREA                                          │                               │
-│            hero photograph (finance app, focal point)            │ Manzo          (sheet title)  │
-│                                                                  ├───────────────┬───────────────┤
-│                                                                  │ LOCATION      │ YEAR          │
-│                                                                  │ Kebayoran Baru│ 2025          │
-│                                                                  ├───────────────┴───────────────┤
-│                                                                  │ DESIGN  Gondo & Jules         │
-│                                                                  ├───────────────────────────────┤
-│                                                                  │ SHEET                         │
-│                                                                  │ 014        (mono, large)      │
-│                                                                  ├───────────────────────────────┤
-│                                                                  │ 01 / 05            ←  ‖  →    │
-│                                                                  │ ━━━━━━━━━━────────────────    │  progress
-└──────────────────────────────────────────────────────────────────┴───────────────────────────────┘
-  The sheet fills the screen (title block clamp(320px, 27vw, 440px)); below 1024 px the title block
-  sits under the photograph (4:5 on phones, 3:2 on tablets): project | sheet, location | year,
-  controls. On screens under 880 px tall the design credit gives way.
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                  │
+│               HERO PHOTOGRAPH, full screen, edge to edge (dashboard-chosen, focal point)         │  poster
+│                                                                                                  │
+│                    The balance of subtle luxe                                                    │  h1, display
+│                            [AND] unmatched quality.                                              │  staggered
+│                                                                                                  │
+├────────┬──────────────┬────────────────┬────────────────┬────────┬───────────────────────────────┤
+│ Sheet  │ Project      │ Location       │ Design         │ Year   │ 02 / 05   ‖  →                │  title strip,
+│ 014    │ Manzo        │ Kebayoran Baru │ Gondo & Jules  │ 2025   │ ━━━━━━━──────                 │  on the photo
+└────────┴──────────────┴────────────────┴────────────────┴────────┴───────────────────────────────┘
+  (3 Nov 2026: the photograph fills the screen. The header strip is clear over it in light ink and
+   turns paper once the photograph has passed under it; the title block lies on the photograph's
+   lower edge over a graphite scrim, in the divider sheets' light ink. 4 Nov 2026: the h1 moved
+   from the title block to the centre of the photograph, large, over a soft graphite pool. Display
+   setting: two staggered lines, the second offset right like a dimension; "and" is set as a boxed
+   note in the title block's mono lettering. Each line rises out of its own mask in the intro.)
 
   [col 1-3 label: Since 2017]      [col 4-11: Kadjoe's one-sentence statement, t-l]      statement
 

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { site } from '@/content/site';
-import { plexMono, switzer } from './fonts';
+import { cormorant, cormorantItalic, jost } from './fonts';
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -17,7 +17,7 @@ const flags = `(function(){var h=document.documentElement;h.classList.add('js');
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en" className={`${switzer.variable} ${plexMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${jost.variable} ${cormorant.variable} ${cormorantItalic.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: flags }} />
       </head>

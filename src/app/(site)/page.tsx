@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { HeroSheet, type HeroItem } from '@/components/site/HeroSheet';
+import { HeroClassic } from '@/components/site/HeroClassic';
+import type { HeroItem } from '@/components/site/HeroSheet';
 import { Pic, PreviewBox, photoAlt } from '@/components/site/Pic';
 import { site } from '@/content/site';
 import { coverWidth, wallSizes } from '@/lib/sizes';
@@ -27,7 +28,9 @@ export default function Home() {
 
   return (
     <>
-      {heroItems.length ? <HeroSheet items={heroItems} title={site.tagline} /> : <h1 className="sr-only">{site.tagline}</h1>}
+      {heroItems.length ? (
+        <HeroClassic items={heroItems} title={site.heroTitle} kicker={`${site.legalName} — Jakarta`} />
+      ) : <h1 className="sr-only">{site.tagline}</h1>}
 
       <section className="statement wrap grid12" aria-labelledby="statement-title">
         <h2 id="statement-title" className="statement__label label">Est. {site.founded}, Jakarta</h2>
