@@ -5,7 +5,7 @@ import { site } from '@/content/site';
 import { db } from '../db/client';
 import { CATEGORIES, media, partners, projectPartners, projects, type Category } from '../db/schema';
 import { jpeg } from '../media/process';
-import { getClients, getContact } from '../settings';
+import { getClients, getContact, getProfilePdf } from '../settings';
 import { ProfileDocument, type PdfModel, type PdfPhoto, type PdfProject } from './document';
 
 // Company profile = a choice of projects per category (or a hand-picked set) laid out as a PDF.
@@ -54,7 +54,12 @@ function choosePhotos<T extends { id: string; width: number; height: number }>(a
   return [main, ...others.slice(0, 2)];
 }
 
-export async function buildModel(cfg: ProfileConfig): Promise<PdfModel> {
+/** A preview (the finance app shows it beside the builder and rebuilds it on every change) embeds the photos at
+ * this share of their print width: a fraction of the bytes, the same pages. */
+const PREVIEW_SCALE = 0.4;
+
+export async function buildModel(cfg: ProfileConfig, opts: { preview?: boolean } = {}): Promise<PdfModel> {
+  const px = (width: number) => (opts.preview ? Math.round(width * PREVIEW_SCALE) : width);
   const ids = cfg.groups.flatMap((g) => g.projectIds);
   const rows = ids.length ? db.select().from(projects).where(inArray(projects.id, ids)).all() : [];
   const byId = new Map(rows.map((r) => [r.id, r]));
@@ -75,7 +80,7 @@ export async function buildModel(cfg: ProfileConfig): Promise<PdfModel> {
       const p = byId.get(id);
       if (!p) continue;
       const chosen = choosePhotos(photosOf.get(id) ?? [], p.coverId);
-      const photos = (await Promise.all(chosen.map((m, i) => pdfPhoto(m, i === 0 ? 1600 : 1000)))).filter((x): x is PdfPhoto => !!x);
+      const photos = (await Promise.all(chosen.map((m, i) => pdfPhoto(m, px(i === 0 ? 1600 : 1000))))).filter((x): x is PdfPhoto => !!x);
       const names = (role: 'design' | 'photo') => credits.filter((c) => c.projectId === id && c.role === role).map((c) => c.name.replace(/^@/, ''));
       list.push({
         name: p.name, category: LABEL[p.category], typeLabel: p.typeLabel, location: p.location, year: p.year, service: p.service,
@@ -85,11 +90,12 @@ export async function buildModel(cfg: ProfileConfig): Promise<PdfModel> {
     if (list.length) groups.push({ label: LABEL[g.category], projects: list });
   }
 
-  const coverMedia = cfg.coverMediaId
-    ? db.select().from(media).where(eq(media.id, cfg.coverMediaId)).get()
-    : (() => { const first = byId.get(cfg.groups.find((g) => g.projectIds.length)?.projectIds[0] ?? ''); const ph = first ? choosePhotos(photosOf.get(first.id) ?? [], first.coverId) : []; return ph[0]; })();
+  const saved = getProfilePdf();
+  const pick = (id: string | null) => (id ? db.select().from(media).where(eq(media.id, id)).get() : undefined);
+  const coverMedia = pick(cfg.coverMediaId ?? saved.coverMediaId)
+    ?? (() => { const first = byId.get(cfg.groups.find((g) => g.projectIds.length)?.projectIds[0] ?? ''); const ph = first ? choosePhotos(photosOf.get(first.id) ?? [], first.coverId) : []; return ph[0]; })();
   const aboutSource = rows.find((r) => r.id !== (cfg.groups[0]?.projectIds[0] ?? '') && (photosOf.get(r.id) ?? []).some((m) => m.height > m.width));
-  const aboutPhoto = aboutSource ? (photosOf.get(aboutSource.id) ?? []).find((m) => m.height > m.width) : undefined;
+  const aboutPhoto = pick(saved.aboutMediaId) ?? (aboutSource ? (photosOf.get(aboutSource.id) ?? []).find((m) => m.height > m.width) : undefined);
   const contact = getContact();
 
   return {
@@ -97,17 +103,17 @@ export async function buildModel(cfg: ProfileConfig): Promise<PdfModel> {
     scope: groups.map((g) => g.label).join(', ').replace(/, ([^,]*)$/, ' and $1'),
     year: String(new Date().getFullYear()),
     legalName: site.legalName,
-    cover: coverMedia ? await pdfPhoto(coverMedia, 1920) : null,
-    about: cfg.sections.about ? { paragraphs: [...site.about], photo: aboutPhoto ? await pdfPhoto(aboutPhoto, 1400) : null } : null,
-    services: cfg.sections.services ? site.services.map((x) => ({ name: x.name, text: x.text })) : null,
+    cover: coverMedia ? await pdfPhoto(coverMedia, px(1920)) : null,
+    about: cfg.sections.about ? { paragraphs: saved.about ?? [...site.about], photo: aboutPhoto ? await pdfPhoto(aboutPhoto, px(1400)) : null } : null,
+    services: cfg.sections.services ? saved.services ?? site.services.map((x) => ({ name: x.name, text: x.text })) : null,
     groups,
-    clients: cfg.sections.clients ? getClients() : null,
+    clients: cfg.sections.clients ? saved.clients ?? getClients() : null,
     contact: cfg.sections.contact ? { addressLines: contact.addressLines, email: contact.email, instagram: contact.instagram, phone: contact.phone, website: site.url } : null,
   };
 }
 
-export async function renderProfile(cfg: ProfileConfig) {
-  const model = await buildModel(cfg);
+export async function renderProfile(cfg: ProfileConfig, opts: { preview?: boolean } = {}) {
+  const model = await buildModel(cfg, opts);
   return renderToBuffer(<ProfileDocument m={model} />);
 }
 

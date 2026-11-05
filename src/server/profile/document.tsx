@@ -20,9 +20,19 @@ Font.register({
     { src: path.join(DIR, 'fonts/IBMPlexMono-Medium.ttf'), fontWeight: 500 },
   ],
 });
+// The website's display serif, for the cover only. TTF copies of src/fonts' woff2: react-pdf embeds woff2 glyphs broken.
+Font.register({
+  family: 'Serif',
+  fonts: [
+    { src: path.join(DIR, 'fonts/Zodiak-300-normal.ttf'), fontWeight: 300 },
+    { src: path.join(DIR, 'fonts/Zodiak-300-italic.ttf'), fontWeight: 300, fontStyle: 'italic' },
+  ],
+});
 Font.registerHyphenationCallback((word) => [word]); // never hyphenate names
 
 const W = 841.89, H = 595.28, M = 28;
+// Cover grid: 44 pt margins, a text column on the left, the photograph from photoX to the right margin.
+const COVER = { m: 44, textW: 250, photoX: 336 };
 const C = { paper: '#f4f4f2', ink: '#1c1b1a', muted: '#6a6762', line: '#d6d5d2', sheet: '#1c1b1a', onSheet: '#ededea', onSheetMuted: '#a09c96', sheetLine: '#3a3836' };
 
 const s = StyleSheet.create({
@@ -131,14 +141,13 @@ function ProjectPage({ p, n, legal }: { p: PdfProject; n: number; legal: string 
   );
 }
 
-function Divider({ label, count, index, n, legal }: { label: string; count: number; index: string; n: number; legal: string }) {
+function Divider({ label, count, n, legal }: { label: string; count: number; n: number; legal: string }) {
   return (
     <Page size="A4" orientation="landscape" style={[s.page, s.dark]}>
       <View style={{ position: 'absolute', left: M, right: M, top: 230 }}>
         <Text style={{ fontFamily: 'Plex', fontSize: 20, letterSpacing: 9, textTransform: 'uppercase' }}>{label}</Text>
         <Text style={{ fontFamily: 'Plex', fontSize: 7, letterSpacing: 0.8, textTransform: 'uppercase', color: C.onSheetMuted, marginTop: 14 }}>{count} project{count === 1 ? '' : 's'}</Text>
       </View>
-      <Text style={{ position: 'absolute', left: M - 6, bottom: 44, fontWeight: 300, fontSize: 150, letterSpacing: -6, color: C.sheetLine, lineHeight: 1 }}>{index}</Text>
       <View style={{ position: 'absolute', left: M, right: M, bottom: 30, borderTopWidth: 0.6, borderTopColor: C.onSheetMuted, height: 3, borderBottomWidth: 0.6, borderBottomColor: C.onSheetMuted }} />
       <Foot n={n} legal={legal} dark />
     </Page>
@@ -166,23 +175,25 @@ export function ProfileDocument({ m }: { m: PdfModel }) {
   const contactPage = m.contact ? ++n : 0;
   if (contactPage) contents.push({ no: pad(++sectionNo), title: 'Contact', page: contactPage });
 
-  const coverW = 528;
   return (
     <Document title={`${m.legalName}: ${m.title}`} author={m.legalName} subject={m.scope} creator="Kadjoe website" producer="Kadjoe website">
-      {/* Cover */}
-      <Page size="A4" orientation="landscape" style={[s.page, s.dark]}>
-        {m.cover ? <View style={{ position: 'absolute', left: 0, top: 0 }}><Photo p={m.cover} w={coverW} h={H} /></View> : null}
-        <View style={{ position: 'absolute', left: coverW, top: 0, width: W - coverW, height: H, padding: 32, justifyContent: 'space-between' }}>
-          <Image src={path.join(DIR, 'kadjoe-shield-light.png')} style={{ width: 30, height: 30 * (261 / 198) }} />
-          <View>
-            <Text style={{ fontFamily: 'Plex', fontSize: 7, letterSpacing: 2.4, textTransform: 'uppercase', color: C.onSheetMuted }}>{m.legalName}</Text>
-            <Text style={{ fontWeight: 300, fontSize: 40, letterSpacing: -1.2, lineHeight: 1, marginTop: 18 }}>{m.title}</Text>
-            <Text style={{ fontSize: 11, lineHeight: 1.35, color: C.onSheet, marginTop: 12, maxWidth: 230 }}>{m.scope}</Text>
+      {/* Cover: paper, the photograph framed on the right, the words on the paper beside it. Nothing set over the photo. */}
+      <Page size="A4" orientation="landscape" style={s.page}>
+        {m.cover ? (
+          <View style={{ position: 'absolute', left: COVER.photoX, top: COVER.m }}>
+            <Photo p={m.cover} w={W - COVER.photoX - COVER.m} h={H - COVER.m * 2} />
           </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 0.6, borderTopColor: C.onSheetMuted, paddingTop: 8 }}>
-            <Text style={{ fontFamily: 'Plex', fontSize: 6.5, letterSpacing: 0.6, textTransform: 'uppercase', color: C.onSheetMuted }}>Design and build, Jakarta</Text>
-            <Text style={{ fontFamily: 'Plex', fontSize: 6.5, letterSpacing: 0.6, color: C.onSheetMuted }}>{m.year}</Text>
-          </View>
+        ) : null}
+        <View style={{ position: 'absolute', left: COVER.m, top: COVER.m, width: COVER.textW }}>
+          <Image src={path.join(DIR, 'kadjoe-shield-dark.png')} style={{ width: 20, height: 20 * (261 / 198) }} />
+          <Text style={[s.label, { color: C.ink, letterSpacing: 2.2, marginTop: 18 }]}>{m.legalName}</Text>
+        </View>
+        <View style={{ position: 'absolute', left: COVER.m, bottom: COVER.m, width: COVER.textW }}>
+          {/* Zodiak's capitals sit 0.051 em in from their box: pulled back, the title's stem lines up with the labels. */}
+          <Text style={{ fontFamily: 'Serif', fontWeight: 300, fontSize: 50, letterSpacing: -1.2, lineHeight: 1.02, marginLeft: -50 * 0.051 }}>{m.title}</Text>
+          <Text style={{ fontFamily: 'Serif', fontWeight: 300, fontStyle: 'italic', fontSize: 13, lineHeight: 1.35, color: C.muted, marginTop: 12 }}>{m.scope}</Text>
+          <View style={{ width: 28, borderTopWidth: 0.6, borderTopColor: C.ink, marginTop: 26, marginBottom: 10 }} />
+          <Text style={[s.label, { letterSpacing: 1.6 }]}>Design and build, Jakarta  ·  {m.year}</Text>
         </View>
       </Page>
 
@@ -230,7 +241,7 @@ export function ProfileDocument({ m }: { m: PdfModel }) {
       ) : null}
 
       {m.groups.map((g, gi) => [
-        <Divider key={`d${gi}`} label={g.label} count={g.projects.length} index={groupPages[gi].no} n={groupPages[gi].divider} legal={m.legalName} />,
+        <Divider key={`d${gi}`} label={g.label} count={g.projects.length} n={groupPages[gi].divider} legal={m.legalName} />,
         ...g.projects.map((p, pi) => <ProjectPage key={`p${gi}-${pi}`} p={p} n={groupPages[gi].pages[pi]} legal={m.legalName} />),
       ])}
 

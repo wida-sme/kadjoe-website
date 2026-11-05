@@ -1,15 +1,15 @@
 import { randomBytes } from 'node:crypto';
-import { and, asc, eq, like, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, like, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/client';
-import { CATEGORIES, PROJECT_STATUSES, igPosts, partners, projects } from '../db/schema';
+import { CATEGORIES, PROJECT_STATUSES, heroSlides, igPosts, igSyncRuns, media, partners, projects } from '../db/schema';
 import * as P from '../admin/projects';
 import * as R from '../admin/partners';
 import { site } from '@/content/site';
 import { authorizeUrl, getMe, InstagramError } from '../instagram/api';
 import { approvePost, ignorePosts, inbox, recentPosts, runSync } from '../instagram/sync';
 import { candidatesFor, defaultConfig } from '../profile/build';
-import { clientsSchema, contactSchema, getClients, getContact, getInstagram, setInstagram, write as writeSetting } from '../settings';
+import { clientsSchema, contactSchema, getClients, getContact, getInstagram, getProfilePdf, profilePdfSchema, setInstagram, write as writeSetting } from '../settings';
 
 // Everything the finance app can read or change, as plain functions behind /api/internal/[op].
 
@@ -67,6 +67,14 @@ export const READ: Record<string, (params: URLSearchParams) => unknown> = {
     igPending: count(db.select({ n }).from(igPosts).where(eq(igPosts.status, 'pending'))),
     partnersReview: count(db.select({ n }).from(partners).where(eq(partners.needsReview, true))),
     igLastSync: getInstagram().lastSyncAt,
+    // The rest of what the old dashboard's Overview showed.
+    photos: count(db.select({ n }).from(media)),
+    hero: count(db.select({ n }).from(heroSlides)),
+    studios: count(db.select({ n }).from(partners).where(eq(partners.kind, 'design'))),
+    igConnected: !!getInstagram().token,
+    igUsername: getInstagram().username,
+    igLastRun: db.select({ startedAt: igSyncRuns.startedAt, ok: igSyncRuns.ok, imported: igSyncRuns.imported, pending: igSyncRuns.pending, message: igSyncRuns.message })
+      .from(igSyncRuns).orderBy(desc(igSyncRuns.id)).limit(1).get() ?? null,
   }),
   'projects.list': (p) => {
     const category = CATEGORIES.find((c) => c === p.get('category')) ?? null;
@@ -86,14 +94,23 @@ export const READ: Record<string, (params: URLSearchParams) => unknown> = {
     const s = getInstagram();
     return {
       connected: !!s.token, username: s.username, autoPublish: s.autoPublish, importSince: s.importSince,
-      expiresAt: s.expiresAt, lastError: s.lastError,
+      expiresAt: s.expiresAt, lastError: s.lastError, lastSyncAt: s.lastSyncAt,
       appReady: !!process.env.IG_APP_ID && !!process.env.IG_APP_SECRET,
       inbox: inbox(), recent: recentPosts(20),
+      runs: db.select().from(igSyncRuns).orderBy(desc(igSyncRuns.id)).limit(8).all(),
     };
   },
   'profile.defaults': () => ({
     config: defaultConfig(),
     candidates: Object.fromEntries(CATEGORIES.map((c) => [c, candidatesFor(c)])),
+    // What the PDF prints: its own saved content, and the website's texts it falls back to.
+    content: getProfilePdf(),
+    site: { about: site.about, services: site.services.map((x) => ({ name: x.name, text: x.text })), clients: getClients() },
+    // Every photo of a published project, for the cover (landscape) and About Us (portrait) pickers.
+    photos: db.select({ mediaId: media.id, projectId: projects.id, projectName: projects.name, location: projects.location, width: media.width, height: media.height })
+      .from(media).innerJoin(projects, eq(projects.id, media.projectId))
+      .where(and(eq(projects.status, 'published'), eq(media.hidden, false)))
+      .orderBy(desc(projects.sortDate), asc(media.position)).all(),
   }),
 };
 
@@ -252,6 +269,13 @@ export const WRITE: Record<string, (body: unknown | FormData) => Promise<OpResul
     const s = contactSchema.safeParse(obj(b).input);
     if (!s.success) return first(s.error, 'Check the form');
     writeSetting('contact', s.data);
+    return { ok: true, message: 'Saved' };
+  },
+
+  'profile.content': async (b) => {
+    const s = profilePdfSchema.safeParse(obj(b).input);
+    if (!s.success) return first(s.error, 'Check the form');
+    writeSetting('profilePdf', s.data);
     return { ok: true, message: 'Saved' };
   },
 

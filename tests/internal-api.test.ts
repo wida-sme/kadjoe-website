@@ -52,6 +52,12 @@ describe('internal api', () => {
     expect((await r.json()).code).toBe('instagram_unreachable');
   });
 
+  it('instagram.get lists the latest checks, as the old Instagram page did', async () => {
+    const j = await (await get('instagram.get')).json();
+    expect(j).toHaveProperty('lastSyncAt');
+    expect(Array.isArray(j.runs)).toBe(true);
+  });
+
   it('refuses an invalid project and saves a valid one', async () => {
     const r = await post('project.save', { id: null, input: project('') });
     expect(r.status).toBe(400);
@@ -64,7 +70,7 @@ describe('internal api', () => {
     expect(body.id).toBeTruthy();
     const list = await (await get('projects.list', '?q=Uji')).json();
     expect(list.map((p: { id: string }) => p.id)).toContain(body.id);
-    expect(await (await get('overview')).json()).toMatchObject({ drafts: 1, published: 0, igPending: 0 });
+    expect(await (await get('overview')).json()).toMatchObject({ drafts: 1, published: 0, igPending: 0, photos: 0, hero: 0, igConnected: false, igLastRun: null });
   });
 
   it('reports a taken instagram handle as duplicate_handle', async () => {
@@ -86,6 +92,39 @@ describe('internal api', () => {
     const got = await (await get('project.get', `?id=${created.id}`)).json();
     expect(got.photos).toHaveLength(1);
     expect((await get('project.get', '?id=missing')).status).toBe(404);
+  });
+
+  it('a preview profile embeds its photos smaller than the printed one', async () => {
+    const created = await (await post('project.save', { id: null, input: project('Rumah Pratinjau') })).json();
+    const jpeg = await sharp({ create: { width: 2400, height: 1600, channels: 3, background: '#3a7' } }).jpeg().toBuffer();
+    const form = new FormData();
+    form.set('projectId', created.id);
+    form.append('files', new File([new Uint8Array(jpeg)], 'b.jpg', { type: 'image/jpeg' }));
+    await post('photos.upload', form);
+    const { buildModel } = await import('@/server/profile/build');
+    const cfg = { title: 'Portfolio', groups: [{ category: 'residential' as const, projectIds: [created.id] }], sections: { about: false, services: false, clients: false, contact: false }, coverMediaId: null };
+    const full = await buildModel(cfg);
+    const preview = await buildModel(cfg, { preview: true });
+    // The first photo of a project prints 1600 px wide; the preview takes 40% of that.
+    expect(path.basename(full.groups[0].projects[0].photos[0].file)).toBe('p1600.jpg');
+    expect(path.basename(preview.groups[0].projects[0].photos[0].file)).toBe('p640.jpg');
+  });
+
+  it("profile.content keeps the PDF's own texts apart from the website; the PDF prints them", async () => {
+    expect((await post('profile.content', { input: { about: [''] } })).status).toBe(400);
+    const input = { coverMediaId: null, aboutMediaId: null, about: ['Our own words.'], services: [{ name: 'Build', text: 'We build.' }], clients: ['Klien A'] };
+    expect((await post('profile.content', { input })).status).toBe(200);
+    const d = await (await get('profile.defaults')).json();
+    expect(d.content).toEqual(input);
+    expect(d.site.about.length).toBeGreaterThan(0); // the website's own text is untouched
+    expect(Array.isArray(d.photos)).toBe(true);
+    const { buildModel } = await import('@/server/profile/build');
+    const m = await buildModel({ title: 'P', groups: [{ category: 'residential', projectIds: [] }], sections: { about: true, services: true, clients: true, contact: false }, coverMediaId: null });
+    expect(m.about?.paragraphs).toEqual(['Our own words.']);
+    expect(m.services).toEqual([{ name: 'Build', text: 'We build.' }]);
+    expect(m.clients).toEqual(['Klien A']);
+    await post('profile.content', { input: {} }); // back to the website's texts
+    expect((await buildModel({ title: 'P', groups: [{ category: 'residential', projectIds: [] }], sections: { about: true, services: false, clients: false, contact: false }, coverMediaId: null })).about?.paragraphs).toEqual(d.site.about);
   });
 
   it('returns 500 failed when a read throws', async () => {

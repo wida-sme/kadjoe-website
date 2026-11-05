@@ -22,7 +22,7 @@ export async function GET(req: Request, { params }: Ctx) {
     try { raw = JSON.parse(Buffer.from(url.searchParams.get('c') ?? '', 'base64url').toString('utf8')); } catch { return bad('invalid'); }
     const cfg = profileSchema.safeParse(raw);
     if (!cfg.success) return bad('invalid');
-    const pdf = await renderProfile(cfg.data);
+    const pdf = await renderProfile(cfg.data, { preview: url.searchParams.get('preview') === '1' });
     return new Response(new Uint8Array(pdf), {
       headers: {
         'content-type': 'application/pdf',
