@@ -92,7 +92,17 @@ Nobody gives the site the Instagram password.
 
 ## Deploy
 
-The image is built like the finance app's (`Dockerfile`, Node 24, runs as `node`, data in `/data`):
+The image is built like the finance app's (`Dockerfile`, Node 24, runs as `node`, data in `/data`) and deployed
+the same way: in GitHub, Actions → Deploy → Run workflow on `main` (optionally a commit SHA, to roll forward or
+back). `.github/workflows/deploy.yml` builds `kadjoe-site:<sha>`, checks it has no data, smoke-tests it, copies
+`deploy/` to `/srv/kadjoe/site/`, streams the image to the server's Docker over SSH and runs
+`/srv/kadjoe/site/deploy.sh`. That script copies `site.db` to `/data/backups/pre-deploy-*.db` (the new image may
+migrate it), sets `SITE_IMAGE` in `.env`, restarts only `site` (and Caddy when the overlay changed), reloads Caddy
+and waits for `https://$SITE_DOMAIN/api/health`. It keeps the 3 newest site images for a rollback:
+`bash /srv/kadjoe/site/deploy.sh kadjoe-site:<previous sha>`.
+
+One-time setup: the repository secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` and `DEPLOY_KNOWN_HOSTS`,
+with the same values as wida-sme/kadjoe-app's. By hand, without the workflow:
 
 ```bash
 docker build -t kadjoe-site:$(git rev-parse --short HEAD) .

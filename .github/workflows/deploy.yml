@@ -1,0 +1,136 @@
+# Builds the website image for one commit and puts it straight onto the finance app's server, as wida-sme/kadjoe-app's
+# deploy does: no registry, no artifacts. Code only: the site's data stays in /srv/kadjoe/site-data.
+#
+# Runs only by hand, on main: Actions → Deploy → Run workflow, optionally with a commit SHA to roll forward or back
+# to. In one job: build → check the image has no data → smoke test → copy deploy/ to /srv/kadjoe/site/ → stream the
+# image to the server's Docker over SSH → /srv/kadjoe/site/deploy.sh.
+#
+# One-time setup (Settings → Secrets and variables → Actions → Repository secrets), the same values as kadjoe-app's:
+#     DEPLOY_HOST         server hostname or IP
+#     DEPLOY_USER         the deploy user (docker group, owns /srv/kadjoe except the data folders)
+#     DEPLOY_SSH_KEY      private key whose public half is in that user's authorized_keys
+#     DEPLOY_KNOWN_HOSTS  the server's host key line(s): ssh-keyscan -t ed25519 <host>, checked by hand
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA to deploy (empty = latest main)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+# One deploy at a time, and a newer one never cancels a deploy in progress.
+concurrency:
+  group: deploy-site
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Pick the commit
+        id: pick
+        env:
+          INPUT_SHA: ${{ inputs.sha }}
+          REF_SHA: ${{ github.sha }}
+        run: |
+          sha="${INPUT_SHA:-$REF_SHA}"
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "not a full commit SHA: $sha" >&2; exit 1; }
+          echo "sha=$sha" >>"$GITHUB_OUTPUT"
+          echo "image=kadjoe-site:$sha" >>"$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.pick.outputs.sha }}
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@v4
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          push: false
+          provenance: false
+          tags: ${{ steps.pick.outputs.image }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Check the image has no data
+        env:
+          IMAGE: ${{ steps.pick.outputs.image }}
+        run: |
+          # The app's own files and /data; node_modules ships fixtures such as .env.example.
+          bad=$(docker run --rm --user 0 --entrypoint /bin/sh "$IMAGE" -c \
+            "find /app /data -path /app/node_modules -prune -o -type f \( -name '*.db*' -o -name '*.sqlite*' -o -name '.env*' -o -path '/data/*' -o -path '/app/data/*' \) -print")
+          [ -z "$bad" ] || { echo "::error::data-like files in the image"; echo "$bad"; exit 1; }
+
+      - name: Smoke test (migrate, start, /api/health, internal API)
+        env:
+          IMAGE: ${{ steps.pick.outputs.image }}
+        run: |
+          trap 'docker rm -f smoke >/dev/null 2>&1 || true' EXIT
+          docker run -d --name smoke -p 127.0.0.1:3200:3200 -e SITE_ADMIN_TOKEN=smoke \
+            --tmpfs /data:rw,uid=1000,gid=1000,mode=0750 "$IMAGE"
+          for _ in $(seq 1 45); do body=$(curl -fsS http://127.0.0.1:3200/api/health) && break; sleep 2; done
+          docker logs smoke
+          echo "health: ${body:-<no answer>}"
+          jq -e '.ok == true' <<<"${body:-null}"
+          curl -fsS http://127.0.0.1:3200/ -o /dev/null
+          [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3200/api/internal/overview)" = 401 ]
+          curl -fsS -H 'Authorization: Bearer smoke' http://127.0.0.1:3200/api/internal/overview | jq -e '.published == 0'
+
+      - name: SSH setup
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER_NAME: ${{ secrets.DEPLOY_USER }}
+        run: |
+          for v in SSH_KEY KNOWN_HOSTS HOST USER_NAME; do [ -n "${!v}" ] || { echo "deploy secret for $v not set" >&2; exit 1; }; done
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" >~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" >~/.ssh/known_hosts
+          cat >~/.ssh/config <<'EOF'
+          Host server
+            IdentityFile ~/.ssh/deploy
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            BatchMode yes
+            ServerAliveInterval 30
+          EOF
+          printf '  HostName %s\n  User %s\n' "$HOST" "$USER_NAME" >>~/.ssh/config
+
+      - name: Sync deploy files
+        # --inplace for Caddyfile.site: Caddy bind-mounts that one file, and a renamed new file would not reach it.
+        run: |
+          rsync -t --inplace --chmod=F644 deploy/compose.site.yml deploy/Caddyfile.site server:/srv/kadjoe/site/
+          rsync -t --chmod=F755 deploy/deploy.sh server:/srv/kadjoe/site/deploy.sh
+
+      - name: Send image to the server
+        env:
+          IMAGE: ${{ steps.pick.outputs.image }}
+        run: |
+          docker image inspect --format 'image size: {{.Size}} bytes' "$IMAGE"
+          docker save "$IMAGE" | gzip -1 | ssh server "gunzip | docker load"
+          ssh server "docker image inspect '$IMAGE' >/dev/null"
+
+      - name: Deploy
+        env:
+          IMAGE: ${{ steps.pick.outputs.image }}
+        run: ssh server "bash /srv/kadjoe/site/deploy.sh '$IMAGE'"
+
+      - name: Summary
+        if: always()
+        env:
+          IMAGE: ${{ steps.pick.outputs.image }}
+          STATUS: ${{ job.status }}
+        run: |
+          echo "### Deploy $STATUS: \`$IMAGE\`" >>"$GITHUB_STEP_SUMMARY"
