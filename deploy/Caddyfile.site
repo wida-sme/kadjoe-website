@@ -14,3 +14,9 @@
 	respond @internal 404
 	reverse_proxy site:3200
 }
+
+# Old links and typed addresses keep working. Its DNS record must point here too, or Caddy keeps retrying the
+# certificate (harmless, but noisy in the log).
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
