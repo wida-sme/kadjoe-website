@@ -55,10 +55,16 @@ docker compose up -d --no-deps caddy site
 # Picks up a changed Caddyfile.site (the workflow writes it in place, so the bind mount sees it).
 docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 
-# The site migrates, then starts; give it up to ~2 minutes.
-for _ in $(seq 1 40); do
-  if body=$(curl -fsS --max-time 5 "https://$SITE_DOMAIN/api/health" 2>/dev/null) && grep -q '"ok":true' <<<"$body"; then
-    log "health: $body"
+# The site migrates, then starts; give it up to ~3 minutes. The container's own healthcheck decides, so a
+# deploy before SITE_DOMAIN's DNS points here (the first one) still passes; the public address is reported.
+for _ in $(seq 1 60); do
+  health=$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q site)" 2>/dev/null || true)
+  if [ "$health" = healthy ]; then
+    if body=$(curl -fsS --max-time 5 "https://$SITE_DOMAIN/api/health" 2>/dev/null) && grep -q '"ok":true' <<<"$body"; then
+      log "health: container healthy, https://$SITE_DOMAIN: $body"
+    else
+      log "WARNING: container healthy, but https://$SITE_DOMAIN/api/health did not answer ok (DNS not here yet?)"
+    fi
     docker image ls kadjoe-site --format '{{.CreatedAt}}\t{{.Repository}}:{{.Tag}}' | sort -r | cut -f2 \
       | grep -vxF "$IMAGE" | grep -vxF "${PREVIOUS:-none}" | tail -n +"$((KEEP - 1))" | xargs -r docker image rm >/dev/null || true
     find . -maxdepth 1 -name '.env.bak-site-*' -mtime +30 -delete
@@ -67,7 +73,7 @@ for _ in $(seq 1 40); do
   sleep 3
 done
 
-log "health check failed; last answer: ${body:-<none>}"
+log "health check failed; container: ${health:-<none>}"
 docker compose logs --tail 80 site || true
 log "rollback by hand: bash $STACK/site/deploy.sh ${PREVIOUS:-<previous tag>}; if a migration ran, restore the pre-deploy copy first"
 exit 1
