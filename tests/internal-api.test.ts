@@ -105,9 +105,9 @@ describe('internal api', () => {
     const cfg = { title: 'Portfolio', groups: [{ category: 'residential' as const, projectIds: [created.id] }], sections: { about: false, services: false, clients: false, contact: false }, coverMediaId: null };
     const full = await buildModel(cfg);
     const preview = await buildModel(cfg, { preview: true });
-    // The first photo of a project prints 1600 px wide; the preview takes 40% of that.
+    // The first photo of a project prints 1600 px wide; the preview takes 40% of that, from the fast encoder ("f").
     expect(path.basename(full.groups[0].projects[0].photos[0].file)).toBe('p1600.jpg');
-    expect(path.basename(preview.groups[0].projects[0].photos[0].file)).toBe('p640.jpg');
+    expect(path.basename(preview.groups[0].projects[0].photos[0].file)).toBe('p640f.jpg');
   });
 
   it("profile.content keeps the PDF's own texts apart from the website; the PDF prints them", async () => {

@@ -39,8 +39,8 @@ export function defaultConfig(categories: Category[] = [...CATEGORIES], perCateg
   };
 }
 
-async function pdfPhoto(m: { id: string; focalX: number; focalY: number; width: number; height: number }, width: number): Promise<PdfPhoto | null> {
-  const file = await jpeg(m.id, width);
+async function pdfPhoto(m: { id: string; focalX: number; focalY: number; width: number; height: number }, width: number, fast = false): Promise<PdfPhoto | null> {
+  const file = await jpeg(m.id, width, fast);
   return file ? { file, focalX: m.focalX, focalY: m.focalY, width: m.width, height: m.height } : null;
 }
 
@@ -59,7 +59,7 @@ function choosePhotos<T extends { id: string; width: number; height: number }>(a
 const PREVIEW_SCALE = 0.4;
 
 export async function buildModel(cfg: ProfileConfig, opts: { preview?: boolean } = {}): Promise<PdfModel> {
-  const px = (width: number) => (opts.preview ? Math.round(width * PREVIEW_SCALE) : width);
+  const photo = (m: Parameters<typeof pdfPhoto>[0], width: number) => (opts.preview ? pdfPhoto(m, Math.round(width * PREVIEW_SCALE), true) : pdfPhoto(m, width));
   const ids = cfg.groups.flatMap((g) => g.projectIds);
   const rows = ids.length ? db.select().from(projects).where(inArray(projects.id, ids)).all() : [];
   const byId = new Map(rows.map((r) => [r.id, r]));
@@ -73,22 +73,23 @@ export async function buildModel(cfg: ProfileConfig, opts: { preview?: boolean }
     }
   }
 
-  const groups = [];
-  for (const g of cfg.groups) {
-    const list: PdfProject[] = [];
-    for (const id of g.projectIds) {
+  // Every project's photographs at once: on a cold cache each is a sharp resize, and sharp runs them side by side.
+  const groups = (await Promise.all(cfg.groups.map(async (g) => {
+    const list = await Promise.all(g.projectIds.flatMap((id) => {
       const p = byId.get(id);
-      if (!p) continue;
-      const chosen = choosePhotos(photosOf.get(id) ?? [], p.coverId);
-      const photos = (await Promise.all(chosen.map((m, i) => pdfPhoto(m, px(i === 0 ? 1600 : 1000))))).filter((x): x is PdfPhoto => !!x);
-      const names = (role: 'design' | 'photo') => credits.filter((c) => c.projectId === id && c.role === role).map((c) => c.name.replace(/^@/, ''));
-      list.push({
-        name: p.name, category: LABEL[p.category], typeLabel: p.typeLabel, location: p.location, year: p.year, service: p.service,
-        design: names('design').join(' and ') || (p.inHouse ? 'Kadjoe' : null), photography: names('photo').join(' and ') || null, photos,
-      });
-    }
-    if (list.length) groups.push({ label: LABEL[g.category], projects: list });
-  }
+      if (!p) return [];
+      return [(async (): Promise<PdfProject> => {
+        const chosen = choosePhotos(photosOf.get(id) ?? [], p.coverId);
+        const photos = (await Promise.all(chosen.map((m, i) => photo(m, i === 0 ? 1600 : 1000)))).filter((x): x is PdfPhoto => !!x);
+        const names = (role: 'design' | 'photo') => credits.filter((c) => c.projectId === id && c.role === role).map((c) => c.name.replace(/^@/, ''));
+        return {
+          name: p.name, category: LABEL[p.category], typeLabel: p.typeLabel, location: p.location, year: p.year, service: p.service,
+          design: names('design').join(' and ') || (p.inHouse ? 'Kadjoe' : null), photography: names('photo').join(' and ') || null, photos,
+        };
+      })()];
+    }));
+    return { label: LABEL[g.category], projects: list };
+  }))).filter((g) => g.projects.length);
 
   const saved = getProfilePdf();
   const pick = (id: string | null) => (id ? db.select().from(media).where(eq(media.id, id)).get() : undefined);
@@ -97,14 +98,18 @@ export async function buildModel(cfg: ProfileConfig, opts: { preview?: boolean }
   const aboutSource = rows.find((r) => r.id !== (cfg.groups[0]?.projectIds[0] ?? '') && (photosOf.get(r.id) ?? []).some((m) => m.height > m.width));
   const aboutPhoto = pick(saved.aboutMediaId) ?? (aboutSource ? (photosOf.get(aboutSource.id) ?? []).find((m) => m.height > m.width) : undefined);
   const contact = getContact();
+  const [cover, about] = await Promise.all([
+    coverMedia ? photo(coverMedia, 1920) : null,
+    cfg.sections.about && aboutPhoto ? photo(aboutPhoto, 1400) : null,
+  ]);
 
   return {
     title: cfg.title,
     scope: groups.map((g) => g.label).join(', ').replace(/, ([^,]*)$/, ' and $1'),
     year: String(new Date().getFullYear()),
     legalName: site.legalName,
-    cover: coverMedia ? await pdfPhoto(coverMedia, px(1920)) : null,
-    about: cfg.sections.about ? { paragraphs: saved.about ?? [...site.about], photo: aboutPhoto ? await pdfPhoto(aboutPhoto, px(1400)) : null } : null,
+    cover,
+    about: cfg.sections.about ? { paragraphs: saved.about ?? [...site.about], photo: about } : null,
     services: cfg.sections.services ? saved.services ?? site.services.map((x) => ({ name: x.name, text: x.text })) : null,
     groups,
     clients: cfg.sections.clients ? saved.clients ?? getClients() : null,
