@@ -20,7 +20,7 @@ export default function Home() {
 
   const heroItems: HeroItem[] = (slides.length ? slides : featured.filter((p) => p.cover).map((p) => ({ photo: p.cover!, project: p })))
     .map(({ photo, project }) => ({
-      photo: { id: photo.id, blur: photo.blur, focalX: photo.focalX, focalY: photo.focalY },
+      photo: { id: photo.id, blur: photo.blur, focalX: photo.focalX, focalY: photo.focalY, width: photo.width, height: photo.height },
       alt: photo.alt ?? (project ? photoAlt(project.name, project.location) : site.legalName),
       project: project ? { slug: project.slug, no: project.no, name: project.name, location: project.location, year: project.year, design: designLine(project) } : null,
     }));

@@ -25,7 +25,7 @@
 
 | | Idea | Anchor | Signature | O / F / Fe / P |
 |---|---|---|---|---|
-| **A. The title block** (material of the profession) | Every view is laid out like a sheet from a construction set: a drawing area and a title block that names the project, its designer and its builder | Kadjoe builds from designers' drawings and credits them on every project; a drawing's title block is exactly where the designer and the contractor are named. Kadjoe's own shield is drawn in double lines, like walls on a plan, and its wordmark is set in a monospaced face | The hero sheet change: a hairline rule slides down the photograph like a parallel rule on a drafting table, the next photograph appears in its wake, and every cell of the title block rolls to the next project | 4 / 5 / 5 / 3 |
+| **A. The title block** (material of the profession) | Every view is laid out like a sheet from a construction set: a drawing area and a title block that names the project, its designer and its builder | Kadjoe builds from designers' drawings and credits them on every project; a drawing's title block is exactly where the designer and the contractor are named. Kadjoe's own shield is drawn in double lines, like walls on a plan, and its wordmark is set in a monospaced face | The hero sheet change: a double hairline rule slides down the whole sheet like a parallel rule on a drafting table; the next photograph appears in its wake and every cell of the title block is redrawn where the rule passes it | 4 / 5 / 5 / 3 |
 | B. The shadow gap (craft detail) | The site is a panelled wall: every image is separated by one precise recessed reveal; page changes slide panels apart like a flush jib door | High-end joinery is judged by its shadow gaps | Panels part along the reveal lines on navigation | 4 / 4 / 4 / 3 |
 | C. Jakarta hour (place) | The site shows day or evening photographs depending on the hour in Jakarta | Kadjoe's F&B work is shot at dusk | The hero swaps light with the clock | 3 / 3 / 3 / 4 |
 
@@ -40,13 +40,15 @@ detail: the gallery gap is a consistent "reveal" width.
 Idea:        Kadjoe builds what designers draw; the site is a construction set whose title blocks
              name the project, the designer and the builder.
 Metaphor:    a drawing sheet: drawing area, title block, drawing register, divider sheets.
-Signature:   the hero sheet change (hairline rule slides down, next photograph revealed in its wake,
-             title block cells roll to the next project). Recipe: custom, src/components/site/HeroSheet.
+Signature:   the hero sheet change (the parallel rule slides down the whole sheet, the next photograph
+             appears in its wake, each title-block cell is redrawn where the rule passes it).
+             Recipe: custom, src/components/site/HeroSheet.
 Emotion:     calm precision. Quiet luxury with a builder's exactness.
 Motion verb: slide on the rule and lock: straight, single-axis moves that decelerate hard and stop
              without overshoot; hairlines draw from their origin.
-Screenshot:  a full-width interior photograph inside a paper sheet, with the hairline title block
-             below it reading "Manzo / Kebayoran Baru / 2025 / Gondo & Jules".
+Screenshot:  an interior photograph filling the drawing area of a paper sheet, the title block down
+             its right edge: Kadjoe's sentence, "Manzo" set as the sheet's title, Kebayoran Baru /
+             2025 / Gondo & Jules in hairline cells, and the sheet number 014 large in the corner.
 ```
 
 ## Art direction system
@@ -66,8 +68,10 @@ No accent colour. Focus rings are 2 px at a 3 px offset: ink on paper and paper 
 
 ### Type
 
-- **Switzer** (Fontshare, FFL): display at 300 with negative tracking, text at 400, emphasis 500.
-  A neutral Swiss grotesk lets the interiors lead; at Light and large it reads quiet and expensive.
+- **Switzer** (Fontshare, FFL): display at 300 with negative tracking, text at 400. A neutral Swiss
+  grotesk lets the interiors lead; at Light and large it reads quiet and expensive. Only the weights
+  the site sets are loaded (300, 400; Plex Mono 400): next/font preloads each one ahead of the hero
+  photograph.
 - **IBM Plex Mono** (Google, OFL): title block labels, counters, years, the footer wordmark. Chosen
   because Kadjoe's own wordmark is a light monospaced face with Plex's slab-spurred D and J. This is
   the one reason mono appears, and it appears only where a drawing would use technical lettering.
@@ -97,8 +101,8 @@ marks the end of a sheet: above the footer and under the case-page title block.
 - Page transition: the dark divider sheet slides down over the page carrying the destination's name
   in spaced mono (the company profile's divider pages), then slides on down and off the new page.
 - No loader. One was built (the dark sheet lifting off the hero) and measured 5.3 s on a throttled
-  phone; the first sight is the hero sheet itself instead: the rule passes once over the photograph
-  and the title-block values rise into their cells.
+  phone; the first sight is the hero sheet itself instead: the photograph is there from the first
+  paint, and the rule passes once over the sheet, drawing the title-block values in as it goes.
 - Hovers, one per role:
   - nav links: a hairline draws under the label (current page keeps it and nudges 4 px along it);
   - the logo: a hairline draws under the wordmark, from its first letter;
@@ -119,20 +123,34 @@ marks the end of a sheet: above the footer and under the case-page title block.
 ### Home
 ```
 ┌ header strip: [shield] KADJOE ........................ Projects  Design partners  About Us  Contact ┐
-├──────────────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                                  │
-│                           HERO PHOTOGRAPH (dashboard-chosen, focal point)                        │  poster
-│                                                                                                  │
-├────────────────────────────────┬──────────────┬────────────────┬────────┬────────────────────────┤
-│ The balance of subtle luxe     │ Project      │ Location       │ Year   │ 02 / 05   ‖  →          │  title strip
-│ and unmatched quality.  (h1)   │ Manzo        │ Kebayoran Baru │ 2025   │ ━━━━━━━──────            │
-└────────────────────────────────┴──────────────┴────────────────┴────────┴────────────────────────┘
+├──────────────────────────────────────────────────────────────────┬───────────────────────────────┤
+│                                                                  │ The balance of subtle luxe    │  h1, Kadjoe's
+│                                                                  │ and unmatched quality.        │  sentence
+│                                                                  ├───────────────────────────────┤
+│                                                                  │ PROJECT                       │
+│            DRAWING AREA                                          │                               │
+│            hero photograph (finance app, focal point)            │ Manzo          (sheet title)  │
+│                                                                  ├───────────────┬───────────────┤
+│                                                                  │ LOCATION      │ YEAR          │
+│                                                                  │ Kebayoran Baru│ 2025          │
+│                                                                  ├───────────────┴───────────────┤
+│                                                                  │ DESIGN  Gondo & Jules         │
+│                                                                  ├───────────────────────────────┤
+│                                                                  │ SHEET                         │
+│                                                                  │ 014        (mono, large)      │
+│                                                                  ├───────────────────────────────┤
+│                                                                  │ 01 / 05            ←  ‖  →    │
+│                                                                  │ ━━━━━━━━━━────────────────    │  progress
+└──────────────────────────────────────────────────────────────────┴───────────────────────────────┘
+  The sheet fills the screen (title block clamp(320px, 27vw, 440px)); below 1024 px the title block
+  sits under the photograph (4:5 on phones, 3:2 on tablets): project | sheet, location | year,
+  controls. On screens under 880 px tall the design credit gives way.
 
   [col 1-3 label: Since 2017]      [col 4-11: Kadjoe's one-sentence statement, t-l]      statement
 
   ┌───────────── 8 col landscape ──────────┐   ┌── 4 col portrait ──┐                 gallery wall
   └────────────────────────────────────────┘   │                    │
-   Manzo | F&B | 2025                          └────────────────────┘
+   014 | Manzo | F&B | 2025                    └────────────────────┘
         ┌── 4 col portrait ──┐   ┌───────────── 7 col landscape ───────────┐
         ...                                                     All projects ->
 
@@ -145,6 +163,14 @@ marks the end of a sheet: above the footer and under the case-page title block.
 
 ┌ dark sheet footer: K A D J O E (mono, full width) / address / email / Instagram / © ┐   finale
 ```
+
+The hero sheet change, in order: the double rule (white over the photograph, ink over the paper)
+slides from the top of the sheet to the bottom in 1.2 s (`expo.inOut`); the next photograph is
+revealed above it and settles from 105% to 100%; in each title-block cell the next value is wiped in
+above the rule and the current one out below it, at the exact line the rule is on; the rule fades
+and the 6.5 s hold restarts. The first sight is the same pass over the photograph already shown,
+drawing the values in from nothing. Under reduced motion there is no rule: a 0.35 s crossfade, and
+nothing advances by itself.
 
 ### Projects
 h1 + count, category filter (All, Residential, F&B, Commercial, with counts), view toggle
@@ -181,9 +207,10 @@ orientation, title strip at the foot), clients, contact. No Team page.
 
 A generic model given "luxury interior design firm website" lands on: a centered serif headline over
 a darkened hero, "Our services" in three cards, animated stats, a logo marquee, testimonials and
-"Let's build your dream space". Changed here: the headline sits in a title strip on paper instead of
-over the photo; no cards, counters, marquee or testimonials; every label is a real field; the only
-sentences are Kadjoe's own.
+"Let's build your dream space". Changed here: the headline sits in the sheet's title block on paper,
+beside the photograph instead of over it; the largest lettering is a project's name and its sheet
+number, both real fields; no cards, counters, marquee or testimonials; every label is a real field;
+the only sentences are Kadjoe's own.
 
 ## Decisions written down
 
@@ -193,6 +220,14 @@ sentences are Kadjoe's own.
   in-layout `not-found.tsx`.
 
 - The site is still at rest outside the hero (quiet brief); see Motion language.
+- The hero's values have two buffers each: a change writes the next project into the back one, the
+  rule wipes it in, and the buffers swap roles. Nothing moves and no text changes when a change ends,
+  so autoplay adds no layout shift (CLS 0). The sheet grows rather than letting a title block
+  overflow on short screens.
+- Phones get one hero file whatever their density (800 px at 1x, 1440 px above): the drawing area
+  is 4:5, so a landscape photograph is drawn 1.9x wider than the screen; 1440 keeps it sharp at 2x
+  and the largest paint under 2.5 s on a throttled phone. The rule waits a moment at most (0.7 s)
+  for the photograph it reveals, so it never uncovers a blur.
 - Case pages carry facts, not essays: the owner asked for no unnecessary text, and the old site's
   generated descriptions were dropped. A project can still get a few lines in the dashboard
   (Description); the page shows them under the title block when present.

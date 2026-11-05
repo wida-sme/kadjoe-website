@@ -126,46 +126,81 @@ html.frame-away .header { translate: 0 -101%; }
 @media (max-width: 860px) { .nf-menu { display: block; } }
 
 /* ---------- Hero sheet ---------- */
+/* A drawing sheet: the photographs in the drawing area and the title block down the right edge,
+   under the photograph below 1024 px. The parallel rule is two segments that move as one, white
+   over the photograph and ink over the paper; src/components/site/HeroSheet.tsx moves it and wipes
+   each title-block value where it passes. */
 
 .hero {
-  height: 100svh; min-height: 600px; max-height: 1200px;
-  padding: calc(var(--header-h) + var(--gutter)) var(--gutter) 0;
-  display: grid; grid-template-rows: minmax(0, 1fr) auto;
+  --tb-w: clamp(320px, 27vw, 440px);
+  display: grid; grid-template-rows: 1fr; min-height: max(660px, min(100svh, 1120px));
+  padding: calc(var(--header-h) + var(--gutter)) var(--gutter) var(--gutter);
 }
+/* The sheet fills the screen; if a title block cannot fit (a short screen), the sheet grows with it
+   rather than letting it overflow. */
+.hero__sheet { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) var(--tb-w); grid-template-rows: 1fr; }
 .hero__stage { position: relative; overflow: hidden; background: var(--c-photo); }
 .hero__slide { position: absolute; inset: 0; }
 .hero__slide img { width: 100%; height: 100%; object-fit: cover; }
 .hero__slide:not([data-active]) { visibility: hidden; }
 .hero__link { position: absolute; inset: 0; z-index: 2; cursor: pointer; }
 .hero__rule {
-  position: absolute; left: 0; right: 0; top: 0; z-index: 3; height: 3px; pointer-events: none; opacity: 0;
-  border-top: 1px solid rgb(255 255 255 / 0.9); border-bottom: 1px solid rgb(255 255 255 / 0.9);
-  filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.35));
+  position: absolute; left: 0; right: 0; top: -1px; z-index: 3; height: 3px; pointer-events: none; opacity: 0;
+  border-top: 1px solid currentColor; border-bottom: 1px solid currentColor; will-change: transform;
 }
-.hero__strip {
-  display: grid;
-  grid-template-columns: minmax(0, 4.4fr) minmax(76px, 0.7fr) minmax(0, 1.8fr) minmax(0, 2fr) minmax(0, 2fr) minmax(76px, 0.7fr) minmax(max-content, 1.8fr);
-  border-bottom: 1px solid var(--c-line);
+.hero__rule--photo { color: rgb(255 255 255 / 0.92); filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.35)); }
+.hero__rule--tb { color: var(--c-fg); }
+.hero__track { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+
+/* The title block. The project is lettered as the sheet's title; the sheet number, in the corner
+   above the controls, as large as a drawing's. Every value has a fixed height, so a longer one never
+   moves the cells under it while the sheet changes. */
+.hero__tb {
+  position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto auto;
+  border-top: 1px solid var(--c-line-strong); border-right: 1px solid var(--c-line);
 }
-.hero__cell { min-width: 0; padding: 16px 16px 20px; border-left: 1px solid var(--c-line); display: grid; align-content: start; gap: 8px; }
-.hero__cell:first-child { border-left: 0; padding-left: 0; }
-/* The controls and the progress hairline end on the grid line, where the photograph ends. */
-.hero__cell--controls { padding-right: 0; }
-.hero__title { font-size: clamp(1.5rem, 0.95rem + 1.45vw, 2.5rem); font-weight: 300; letter-spacing: -0.028em; line-height: 1.06; max-width: 21ch; }
+.hero__cell { min-width: 0; padding: 14px 18px 16px; border-top: 1px solid var(--c-line); display: grid; align-content: start; gap: 10px; }
+.hero__cell--title, .hero__cell--project, .hero__cell--design, .hero__cell--sheet, .hero__cell--controls { grid-column: 1 / -1; }
+.hero__cell--title { border-top: 0; padding-block: 16px 22px; }
+.hero__cell--year { border-left: 1px solid var(--c-line); }
+.hero__cell--project { grid-template-rows: auto minmax(0, 1fr); align-content: stretch; }
+.hero__cell--sheet { gap: 8px; }
+.hero__title { font-size: clamp(1.25rem, 0.85rem + 0.9vw, 1.875rem); font-weight: 300; letter-spacing: -0.022em; line-height: 1.12; max-width: 17ch; }
+
 .hero__value { display: grid; overflow: clip; font-size: var(--t-s); line-height: 1.35; }
-.hero__value > * { grid-area: 1 / 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-block: 3px; }
-.hero__value [data-next] { pointer-events: none; }
-.hero__value:has(:focus-visible) { overflow: visible; } /* the cell clips the roll, not the focus ring */
+.hero__value > * { grid-area: 1 / 1; min-width: 0; padding-block: 2px; }
+/* Between changes the back buffer is hidden; while the rule passes both show, each clipped to its side. */
+.hero__tb:not([data-changing]) .hero__value > :not([data-front]) { visibility: hidden; }
+.hero__value > :not([data-front]) { pointer-events: none; }
+.hero__value:has(:focus-visible) { overflow: visible; } /* the cell clips the wipe, not the focus ring */
+.hero__cell--location .hero__value, .hero__cell--design .hero__value { height: calc(2lh + 4px); }
 .hero__cell--location .hero__value > *, .hero__cell--design .hero__value > * {
-  white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.hero__cell--sheet .hero__value { font-family: var(--f-mono); font-size: var(--t-xs); }
+.hero__cell--year .hero__value > * { white-space: nowrap; }
+.hero__name {
+  align-self: end; align-items: end; height: calc(3lh + 0.08em);
+  font-size: clamp(2.25rem, min(0.6rem + 4vw, 7.4vh), 4.75rem); font-weight: 300; letter-spacing: -0.04em; line-height: 0.98;
+}
+.hero__name > * {
+  align-self: end; padding-block: 0 0.08em; text-wrap: balance;
+  display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.hero__no { font-family: var(--f-mono); font-size: clamp(2.5rem, min(0.8rem + 3.3vw, 7vh), 4.5rem); line-height: 1.12; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.hero__no > * { white-space: nowrap; }
 .hero__open { justify-self: start; max-width: 100%; background: linear-gradient(currentColor 0 0) left 100% / 0% 1px no-repeat; transition: background-size 0.5s var(--ease-out); }
 @media (hover: hover) { .hero__open:hover { background-size: 100% 1px; } }
 .hero__open:focus-visible { background-size: 100% 1px; }
+/* First sight: the values wait for the rule's first pass (HeroSheet sets data-drawn after it). */
+.motion .hero__tb:not([data-drawn]) [data-front] { clip-path: inset(0 0 100% 0); }
+
+/* The progress hairline is the sheet's last rule: it runs the full width of the title block, along
+   the photograph's bottom edge, and draws in ink while a photograph holds. */
+.hero__cell--controls { gap: 0; padding-block: 8px 0; }
 .hero__controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .hero__count { font-family: var(--f-mono); font-size: var(--t-xs); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.hero__buttons { display: flex; gap: 2px; }
+.hero__buttons { display: flex; gap: 2px; margin-right: -11px; } /* the last arrow's stroke ends on the cell's edge */
 .icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid transparent; transition: border-color 0.35s var(--ease-out); }
 .icon-btn svg { width: 14px; height: 14px; transition: translate 0.45s var(--ease-out), scale 0.45s var(--ease-out); }
 @media (hover: hover) {
@@ -175,21 +210,37 @@ html.frame-away .header { translate: 0 -101%; }
   .icon-btn[data-dir='prev']:hover svg { translate: -4px 0; scale: 1; }
 }
 .icon-btn:active svg { scale: 0.8; }
-.hero__progress { height: 1px; background: var(--c-line); position: relative; overflow: hidden; margin-top: 10px; }
+.hero__progress { height: 1px; background: var(--c-line-strong); position: relative; overflow: hidden; margin: 14px -18px 0; }
 .hero__progress span { position: absolute; inset: 0; background: var(--c-fg); transform: scaleX(0); transform-origin: left; }
 
-@media (max-width: 1180px) {
-  .hero__strip { grid-template-columns: minmax(0, 3.4fr) minmax(0, 2.2fr) minmax(0, 2.4fr) minmax(max-content, 2fr); }
-  .hero__cell--location, .hero__cell--year, .hero__cell--sheet { display: none; }
+/* Short laptop screens: the design credit gives way so the title block keeps its proportions. */
+@media (min-width: 1024px) and (max-height: 880px) { .hero__cell--design { display: none; } }
+
+/* Narrow screens: the title block under the photograph, project and sheet number side by side. */
+@media (max-width: 1023px) {
+  .hero { min-height: 0; padding-bottom: 0; }
+  .hero__sheet { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+  .hero__stage { aspect-ratio: 3 / 2; }
+  .hero__tb { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: none; border-top: 0; border-right: 0; }
+  .hero__cell { padding: 14px 16px 16px 0; }
+  .hero__cell--title { grid-row: 1; padding-block: 20px 24px; }
+  .hero__cell--project { grid-row: 2; grid-column: 1; }
+  .hero__cell--sheet { grid-row: 2; grid-column: 2; border-left: 1px solid var(--c-line); padding: 14px 0 16px 16px; }
+  .hero__cell--location { grid-row: 3; grid-column: 1; }
+  .hero__cell--year { grid-row: 3; grid-column: 2; padding: 14px 0 16px 16px; }
+  .hero__cell--design { grid-row: 4; }
+  .hero__cell--controls { grid-row: 5; padding-right: 0; padding-bottom: 0; }
+  .hero__progress { margin-inline: 0; }
+  .hero__name { font-size: clamp(2rem, 1.3rem + 2.6vw, 2.75rem); height: calc(2lh + 0.08em); }
+  .hero__name > * { -webkit-line-clamp: 2; line-clamp: 2; }
+  .hero__no { font-size: clamp(2rem, 1.3rem + 2.6vw, 2.75rem); align-self: end; }
+  .hero__cell--sheet { align-content: space-between; }
 }
 @media (max-width: 767px) {
-  .hero { height: auto; min-height: 0; max-height: none; grid-template-rows: auto auto; padding-top: calc(var(--header-h) + 12px); }
+  .hero { padding-top: calc(var(--header-h) + 12px); }
   .hero__stage { aspect-ratio: 4 / 5; max-height: 64svh; width: 100%; }
-  .hero__strip { grid-template-columns: minmax(0, 1fr) auto; }
-  .hero__cell--title { grid-column: 1 / -1; padding: 20px 0 22px; border-bottom: 1px solid var(--c-line); }
-  .hero__cell--location, .hero__cell--design, .hero__cell--year, .hero__cell--sheet { display: none; }
-  .hero__cell--project { border-left: 0; padding-left: 0; }
-  .hero__title { font-size: clamp(1.625rem, 6.6vw, 2rem); }
+  .hero__title { font-size: clamp(1.5rem, 6vw, 1.875rem); }
+  .hero__cell--design { display: none; }
 }
 
 /* ---------- Home sections ---------- */
