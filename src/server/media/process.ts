@@ -6,7 +6,7 @@ import { MEDIA_DIR } from '../paths';
 // Every photograph is stored once as a master (long edge at most MASTER_EDGE, WebP, sRGB, no
 // metadata). The sizes the site asks for are cut from it on first request and kept on disk.
 export const MASTER_EDGE = 2560;
-export const WIDTHS = [160, 320, 480, 640, 960, 1280, 1600, 1920, 2560] as const;
+export const WIDTHS = [160, 320, 480, 640, 800, 960, 1120, 1280, 1440, 1600, 1920, 2240, 2560] as const; // = next.config.ts images
 
 sharp.cache(false);
 sharp.concurrency(2);
@@ -63,18 +63,31 @@ export function hashDistance(a: string, b: string) {
   return n;
 }
 
-/** Path of the WebP at `width`, cut from the master on first use. Width must be one of WIDTHS. */
+/** WebP quality of a size. Every width a thumbnail can use (up to 1920) is at 75 or more: 76 in the
+ *  middle, 75 at both ends where the bytes add up. The retina gallery widths (2240, 2560) stay at 72:
+ *  they are the largest files, and a quality step does not show at that scale. */
+export const variantQuality = (width: number) => (width >= 2240 ? 72 : width <= 480 || width >= 1600 ? 75 : 76);
+
+/** Path of the WebP at `width`, cut from the master on first use. Width must be one of WIDTHS.
+ *  The quality is part of the file name, so a change of quality cuts every size again instead of
+ *  serving files made with the old settings; the old file is removed once the new one exists. */
 export async function variant(id: string, width: number) {
-  const file = path.join(/*turbopackIgnore: true*/ mediaDir(id), `w${width}.webp`);
+  const quality = variantQuality(width);
+  const dir = mediaDir(id);
+  const file = path.join(/*turbopackIgnore: true*/ dir, `w${width}q${quality}.webp`);
   if (fs.existsSync(file)) return file;
   const src = masterPath(id);
   if (!fs.existsSync(src)) return null;
   const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
   await sharp(src)
     .resize({ width, withoutEnlargement: true })
-    .webp({ quality: width <= 480 || width >= 1600 ? 72 : 76, effort: 4, smartSubsample: true })
+    .webp({ quality, effort: 4, smartSubsample: true })
     .toFile(tmp);
   fs.renameSync(tmp, file); // atomic: a concurrent request never reads half a file
+  const older = new RegExp(`^w${width}(q\\d+)?\\.webp$`);
+  for (const f of fs.readdirSync(dir)) {
+    if (older.test(f) && f !== path.basename(file)) fs.rmSync(path.join(/*turbopackIgnore: true*/ dir, f), { force: true });
+  }
   return file;
 }
 

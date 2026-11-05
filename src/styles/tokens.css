@@ -8,17 +8,21 @@
   --c-muted: #6a6762;       /* 5.1:1 on paper */
   --c-line: rgb(28 27 26 / 0.16);
   --c-line-strong: rgb(28 27 26 / 0.34);
-  --c-sheet: #1c1b1a;       /* divider sheets: curtain, loader, footer */
+  --c-sheet: #000;          /* Kadjoe's black, for every dark sheet: curtain, loader, menu, lightbox, footer.
+                               Pure black: the footer drawing is white ink on #000, so any other value shows its edge. */
   --c-on-sheet: #ededea;
   --c-on-sheet-muted: #a09c96;
   --c-sheet-line: rgb(237 237 234 / 0.2);
   --c-photo: #dcdbd7;       /* frame colour while a photograph loads */
   --c-accent: var(--c-fg);
   --c-curtain: var(--c-sheet);
+  --c-gold: #c3a97d;           /* the old site's bronze: hero accents, curtain hairlines */
 
   /* Type */
-  --f-sans: var(--font-switzer), 'Helvetica Neue', Arial, sans-serif;
-  --f-mono: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  --f-sans: var(--font-jost), 'Avenir Next', 'Helvetica Neue', sans-serif;
+  /* The label face. The old site set its labels in Jost capitals, so this is no longer a monospace. */
+  --f-mono: var(--font-jost), 'Avenir Next', 'Helvetica Neue', sans-serif;
+  --f-display: var(--font-cormorant), Georgia, serif;
   --t-mega: clamp(3.5rem, 1rem + 11vw, 13rem);
   --t-xl: clamp(2.5rem, 1.2rem + 4.4vw, 5.75rem);
   --t-l: clamp(1.5rem, 1.15rem + 1.4vw, 2.5rem);

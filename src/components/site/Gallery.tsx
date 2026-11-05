@@ -3,9 +3,10 @@ import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ease, prefersReducedMotion, startScroll, stopScroll } from '@/engine';
+import { cellSizes, type CellKind } from '@/lib/sizes';
 import type { Photo } from '@/server/site/queries';
 
-export type GalleryRow = { kind: 'full' | 'right' | 'left' | 'pair' | 'solo-left' | 'solo-right'; photos: number[] };
+export type GalleryRow = { kind: CellKind; photos: number[] };
 
 const pad = (n: number, w: number) => String(n).padStart(w, '0');
 
@@ -63,6 +64,7 @@ export function Gallery({ photos, rows, alt, name }: { photos: Photo[]; rows: Ga
           <div key={r} className={`g-row g-row--${row.kind}`}>
             {row.photos.map((i) => {
               const p = photos[i];
+              const share = row.kind === 'pair' ? (p.width / p.height) / row.photos.reduce((t, j) => t + photos[j].width / photos[j].height, 0) : 1;
               return (
                 <button
                   key={p.id}
@@ -77,10 +79,12 @@ export function Gallery({ photos, rows, alt, name }: { photos: Photo[]; rows: Ga
                       src={`/media/${p.id}`}
                       alt={p.alt ?? `${alt}, photograph ${i + 1}`}
                       fill
-                      sizes={row.kind === 'full' ? 'calc(100vw - 64px)' : row.kind === 'pair' ? '(max-width: 767px) 50vw, 48vw' : '(max-width: 767px) 100vw, 72vw'}
+                      sizes={cellSizes(row.kind, share)}
                       placeholder="blur"
                       blurDataURL={p.blur}
-                      {...(r === 0 ? { loading: 'eager' as const, fetchPriority: 'high' as const } : {})}
+                      // The first two photographs come with the page (the first is the likely LCP);
+                      // the rest wait until they are near the screen.
+                      {...(i === 0 ? { loading: 'eager' as const, fetchPriority: 'high' as const } : i === 1 ? { loading: 'eager' as const } : { loading: 'lazy' as const })}
                     />
                   </div>
                 </button>

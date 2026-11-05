@@ -14,7 +14,7 @@ body {
   font-family: var(--f-sans);
   font-size: var(--t-body);
   line-height: 1.5;
-  font-weight: 400;
+  font-weight: 300; /* Jost Light, as on the old site */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -32,14 +32,15 @@ ul, ol { list-style: none; padding: 0; }
 ::selection { background: var(--c-fg); color: var(--c-bg); }
 
 /* Accessibility */
-:focus-visible { outline: 1px solid var(--c-accent); outline-offset: 4px; }
+/* One focus ring everywhere: 2 px, 3 px off the element; paper-coloured on the dark sheets (site.css). */
+:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 3px; }
 #main:focus { outline: none; }
 .skip-link {
   position: fixed; left: var(--gutter); top: var(--gutter); z-index: calc(var(--z-loader) + 1);
   padding: 0.7em 1.1em; background: var(--c-fg); color: var(--c-bg); font-size: var(--t-s);
   transform: translateY(-300%);
 }
-.skip-link:focus-visible { transform: none; outline-color: var(--c-bg); outline-offset: -4px; }
+.skip-link:focus-visible { transform: none; outline-color: var(--c-bg); outline-offset: -5px; }
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
@@ -59,34 +60,35 @@ html.lenis, html.lenis body { height: auto; }
 [data-split] > *, [data-split] > * > * { text-indent: 0; }
 [data-split] > :first-child, [data-split] > :first-child > :first-child { text-indent: inherit; }
 
-/* Curtain: the dark divider sheet that carries the destination's name between pages */
+/* Curtain: between pages a deep sheet rises over the page with the destination's name, then lifts
+   away (src/motion/setup.ts). Gold hairlines on its two edges; the shield, the name, a gold rule and
+   the number settle on it in turn. */
 #curtain { position: fixed; inset: 0; z-index: var(--z-curtain); pointer-events: none; visibility: hidden; overflow: hidden; }
 .curtain__panel {
-  position: absolute; inset: 0; background: var(--c-curtain); color: var(--c-on-sheet);
-  display: grid; place-items: center;
+  position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+  background: var(--c-curtain); color: var(--c-on-sheet);
 }
-/* The leading edge carries the logo's double line. */
-.curtain__panel::after {
-  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
-  border-top: 1px solid var(--c-on-sheet-muted); border-bottom: 1px solid var(--c-on-sheet-muted);
+.curtain__panel::before, .curtain__panel::after { content: ''; position: absolute; inset-inline: 0; height: 1px; background: var(--c-gold); opacity: 0.7; }
+.curtain__panel::before { top: 0; }
+.curtain__panel::after { bottom: 0; }
+.curtain__inner { display: grid; justify-items: center; padding-inline: var(--gutter); }
+.curtain__mark {
+  display: block; width: 28px; aspect-ratio: 198 / 261; margin-bottom: clamp(24px, 3vw, 36px); background: var(--c-gold);
+  -webkit-mask: url('/brand/kadjoe-shield.png') no-repeat center / contain;
+  mask: url('/brand/kadjoe-shield.png') no-repeat center / contain;
 }
-/* The title block of the page being opened: Sheet / Title / Build, in the sheet's hairlines. */
-.curtain__tb {
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 3fr) minmax(0, 1fr);
-  width: min(760px, calc(100vw - 2 * var(--gutter)));
-  border-top: 1px solid var(--c-on-sheet-muted); border-bottom: 1px solid var(--c-sheet-line);
+/* The name rises out of its own mask; the padding keeps ascenders and descenders. */
+.curtain__title { display: block; overflow: clip; padding-block: 0.08em 0.14em; }
+.curtain__label {
+  display: block; max-width: 14ch; font-family: var(--f-display); font-weight: 300; line-height: 1.04;
+  font-size: clamp(2.75rem, 1.6rem + 4.4vw, 6rem); letter-spacing: 0.004em; text-wrap: balance;
 }
-.curtain__tb[data-no-sheet] { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); }
-.curtain__tb[data-no-sheet] .curtain__cell:first-child { display: none; }
-.curtain__cell { display: grid; gap: 8px; padding: 12px 14px 16px; overflow: hidden; }
-.curtain__cell + .curtain__cell { border-left: 1px solid var(--c-sheet-line); }
-.curtain__k { font-family: var(--f-mono); font-size: var(--t-label); letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-on-sheet-muted); }
-.curtain__v { display: block; font-size: var(--t-m); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.curtain__cell:first-child .curtain__v, .curtain__cell:last-child .curtain__v { font-family: var(--f-mono); font-size: var(--t-s); padding-top: 0.25em; }
-@media (max-width: 600px) {
-  .curtain__tb { grid-template-columns: minmax(0, 1fr) minmax(0, 2.4fr); }
-  .curtain__cell:last-child { display: none; }
+.curtain__rule { display: block; width: 72px; height: 1px; margin-top: clamp(22px, 2.6vw, 32px); background: var(--c-gold); }
+.curtain__no {
+  display: block; margin-top: 18px; margin-right: -0.42em; font-family: var(--f-sans); font-size: 12px; font-weight: 400;
+  letter-spacing: 0.42em; text-transform: uppercase; color: var(--c-on-sheet-muted);
 }
+.curtain__inner[data-no-sheet] .curtain__no { display: none; }
 
 /* Loader (first visit of a session) */
 #loader {

@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { Gallery, type GalleryRow } from '@/components/site/Gallery';
 import { Pic, photoAlt } from '@/components/site/Pic';
 import { site } from '@/content/site';
+import { caseDescription } from '@/lib/meta';
+import { coverWidth } from '@/lib/sizes';
 import { CATEGORY_LABEL, designLine, getNextProject, getProject, sheetNo, type Photo } from '@/server/site/queries';
 
 export const dynamic = 'force-dynamic';
@@ -12,15 +14,13 @@ export async function generateMetadata({ params }: PageProps<'/projects/[slug]'>
   const { slug } = await params;
   const p = getProject(slug);
   if (!p) return {};
-  const design = designLine(p);
-  const facts = [
-    `${p.name}${p.location ? `, ${p.location}` : ''}: ${CATEGORY_LABEL[p.category].toLowerCase() === 'f&b' ? 'an F&B' : `a ${CATEGORY_LABEL[p.category].toLowerCase()}`} project built by Kadjoe${p.year ? ` (${p.year})` : ''}.`,
-    design && design !== 'Kadjoe' ? `Designed by ${design}.` : p.inHouse ? 'Designed and built by Kadjoe.' : '',
-    p.photographers.length ? `Photography by ${p.photographers.map((x) => x.name.replace(/^@/, '')).join(' and ')}.` : '',
-  ].filter(Boolean).join(' ');
+  const description = caseDescription({
+    name: p.name, location: p.location, category: CATEGORY_LABEL[p.category], year: p.year,
+    design: designLine(p), inHouse: p.inHouse, photographers: p.photographers.map((x) => x.name.replace(/^@/, '')),
+  });
   return {
     title: p.location ? `${p.name}, ${p.location}` : p.name,
-    description: facts,
+    description,
     alternates: { canonical: `/projects/${p.slug}` },
     openGraph: p.cover ? { images: [{ url: `/media/${p.cover.id}/1280.webp`, width: 1280, height: Math.round((1280 * p.cover.height) / p.cover.width) }] } : undefined,
   };
@@ -109,7 +109,7 @@ export default async function ProjectPage({ params }: PageProps<'/projects/[slug
               <span className="label">Next project</span>
               <span className="next__name display">{next.name}</span>
             </div>
-            {next.cover ? <Pic photo={next.cover} alt="" className="next__photo" sizes="220px" /> : null}
+            {next.cover ? <Pic photo={next.cover} alt="" className="next__photo" sizes={coverWidth(next.cover, 4 / 5, '220px')} /> : null}
           </Link>
         </nav>
       ) : null}

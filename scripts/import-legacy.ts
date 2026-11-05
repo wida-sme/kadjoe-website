@@ -2,7 +2,11 @@
 // credits, gallery order) and the WordPress backup (full-resolution originals of the photographs the
 // old site took from kadjoe.com). Both sources are only read.
 //
-//   npm run import:legacy -- --site ../kadjoe-website --wp-zip ~/Downloads/kadjoe-backup-website/well-known.zip [--reset]
+//   npm run import:legacy -- --site ../kadjoe-website [--wp-zip ~/Downloads/kadjoe-backup-website/well-known.zip] [--reset]
+//
+// The backup is optional. Without --wp-zip the default path is tried; when nothing is there, the
+// static site's own copies are used (long edge 1440 px at most, so sharpness is lower). A --wp-zip
+// that points at a missing file stops the import: a typo must not quietly downgrade every photograph.
 //
 // Corrections made here, on purpose:
 //   - M House was two projects merged by the old Instagram scraper. They are split by post:
@@ -12,7 +16,6 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
 import { eq, sql } from 'drizzle-orm';
 import { openDatabase } from '../src/server/db/client';
 import * as t from '../src/server/db/schema';
@@ -21,6 +24,7 @@ import {
   categoryOf, imageOrigin, parseHome, parseProjectPage, plainDashes, serviceOf, shortcodeDate,
   type LegacyCredit, type LegacyProject,
 } from '../src/server/legacy/parse';
+import { openWpZip } from '../src/server/legacy/wp-zip';
 import { hashDistance, writeMaster } from '../src/server/media/process';
 import { DATA_DIR, DB_FILE, MEDIA_DIR } from '../src/server/paths';
 
@@ -30,6 +34,13 @@ const home = (p: string) => p.replace(/^~(?=\/)/, os.homedir());
 const SITE = path.resolve(home(opt('site', '../kadjoe-website')));
 const WP_ZIP = path.resolve(home(opt('wp-zip', '~/Downloads/kadjoe-backup-website/well-known.zip')));
 const LIMIT = Number(opt('limit', '0')); // import only the first N projects (for quick trials)
+
+const wp = openWpZip(WP_ZIP);
+if (!wp && args.includes('--wp-zip')) {
+  console.error(`No WordPress backup at ${WP_ZIP}.`);
+  process.exit(1);
+}
+if (!wp) console.log(`No WordPress backup at ${WP_ZIP}: using the static site's own images.`);
 
 if (args.includes('--reset')) {
   for (const f of [DB_FILE, `${DB_FILE}-wal`, `${DB_FILE}-shm`]) fs.rmSync(f, { force: true });
@@ -83,30 +94,6 @@ const legacy: LegacyProject[] = fs.readdirSync(path.join(SITE, 'projects'))
   .sort()
   .map((f) => parseProjectPage(f.slice(0, -5), fs.readFileSync(path.join(SITE, 'projects', f), 'utf8')));
 const homePage = parseHome(fs.readFileSync(path.join(SITE, 'index.html'), 'utf8'));
-
-// WordPress originals: w_<yyyymm>_<base>.webp was cut from wp-content/uploads/<yyyy>/<mm>/<base>.<ext>.
-const zipIndex = new Map<string, { size: number; name: string }[]>();
-for (const line of execFileSync('unzip', ['-l', WP_ZIP], { maxBuffer: 64 << 20 }).toString('utf8').split('\n')) {
-  const m = /^\s*(\d+)\s+\S+\s+\S+\s+(wp-content\/uploads\/(\d{4})\/(\d{2})\/(.+)\.(jpe?g|png|webp))$/i.exec(line);
-  if (!m) continue;
-  const key = `${m[3]}${m[4]}/${m[5].replace(/-scaled$/, '')}`;
-  const list = zipIndex.get(key) ?? [];
-  list.push({ size: Number(m[1]), name: m[2] });
-  zipIndex.set(key, list);
-}
-const byBase = new Map<string, { size: number; name: string }[]>();
-for (const [key, list] of zipIndex) {
-  const base = key.slice(7);
-  byBase.set(base, [...(byBase.get(base) ?? []), ...list]);
-}
-function wpOriginal(month: string, base: string): Buffer | null {
-  // The old site named files by the month it found them in; WordPress sometimes filed them elsewhere.
-  const list = zipIndex.get(`${month}/${base}`) ?? byBase.get(base);
-  if (!list?.length) return null;
-  const best = [...list].sort((a, b) => b.size - a.size)[0];
-  const pattern = best.name.replace(/[[\]*?]/g, (c) => `[${c}]`); // unzip treats names as patterns
-  return execFileSync('unzip', ['-p', WP_ZIP, pattern], { maxBuffer: 256 << 20 });
-}
 
 // ------------------------------------------------------------------------------------------------
 // Partners
@@ -202,7 +189,7 @@ async function run(job: Job) {
   const origin = imageOrigin(job.file);
   let input: Buffer | string;
   if (origin.kind === 'wp') {
-    const original = wpOriginal(origin.month, origin.base);
+    const original = wp?.original(origin.month, origin.base) ?? null;
     if (original) fromWp++;
     input = original ?? path.join(SITE, 'assets/i/l', job.file);
   } else {

@@ -33,8 +33,10 @@ export default function AboutPage() {
           <Link prefetch={false} href={`/projects/${lead.slug}`} className="about-photo__cap label" data-label={lead.name} data-sheet={sheetNo(lead.no)}>
             {lead.name}{lead.location ? `, ${lead.location}` : ''}
           </Link>
-          <div className="about-photo__frame" data-reveal="clip">
-            <Pic photo={lead.cover} alt={`${lead.name}${lead.location ? `, ${lead.location}` : ''}`} sizes="(max-width: 767px) 100vw, 75vw" priority />
+          {/* The page's lead photograph is there from the first paint, like the hero's: a reveal
+              would hold back the largest paint on phones until the scripts run. */}
+          <div className="about-photo__frame">
+            <Pic photo={lead.cover} alt={`${lead.name}${lead.location ? `, ${lead.location}` : ''}`} sizes="75vw" phone={640} priority />
           </div>
         </section>
       ) : null}

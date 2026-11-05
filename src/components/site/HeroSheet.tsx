@@ -7,7 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
-import { ease, prefersReducedMotion } from '@/engine';
+import { ease, onScroll, prefersReducedMotion, scrollState } from '@/engine';
 import { usePage } from '@/engine/next';
 
 export type HeroItem = {
@@ -32,7 +32,9 @@ const CELLS: { key: Field; label: string; className: string }[] = [
   { key: 'year', label: 'Year', className: 'hero__cell--year' },
 ];
 
-export function HeroSheet({ items, title }: { items: HeroItem[]; title: string }) {
+export type HeroTitleParts = { lead: string; first: string; second: string };
+
+export function HeroSheet({ items, title }: { items: HeroItem[]; title: HeroTitleParts }) {
   const count = items.length;
   const [index, setIndex] = useState(0);
   const [pending, setPending] = useState<number | null>(null);
@@ -84,7 +86,8 @@ export function HeroSheet({ items, title }: { items: HeroItem[]; title: string }
     const incoming = slides[pending];
     const rule = root.querySelector<HTMLElement>('.hero__rule')!;
     const reduced = prefersReducedMotion();
-    gsap.set(incoming, { zIndex: 2 });
+    // Over the outgoing slide but under the scrims (z-index 2 in site.css), so they never leave the photograph.
+    gsap.set(incoming, { zIndex: 1 });
     const tl = gsap.timeline({
       onComplete: () => {
         indexRef.current = pending;
@@ -123,6 +126,9 @@ export function HeroSheet({ items, title }: { items: HeroItem[]; title: string }
   usePage(({ intro, restored }) => {
     // First sight of the sheet: the title-block values rise into their cells while the rule passes
     // once over the photograph. The photograph itself is there from the first paint.
+    const lines = stage.current!.parentElement!.querySelectorAll<HTMLElement>('.hero__line > span');
+    if (prefersReducedMotion() || restored) gsap.set(lines, { autoAlpha: 1 });
+    else intro.add(gsap.fromTo(lines, { yPercent: 108, autoAlpha: 1 }, { yPercent: 0, duration: 1.25, ease: ease.out, stagger: 0.08, clearProps: 'transform' }), 0.15);
     if (!prefersReducedMotion() && !restored) {
       const rule = stage.current!.querySelector<HTMLElement>('.hero__rule')!;
       intro.add(gsap.timeline()
@@ -139,7 +145,13 @@ export function HeroSheet({ items, title }: { items: HeroItem[]; title: string }
     io.observe(stage.current!);
     const vis = () => { paused.current.hidden = document.hidden; sync(); };
     document.addEventListener('visibilitychange', vis);
-    return () => { io.disconnect(); document.removeEventListener('visibilitychange', vis); hold.current?.kill(); };
+    // The header strip is clear over the photograph (CSS); once the photograph has gone under it, paper again.
+    const html = document.documentElement;
+    const header = document.querySelector<HTMLElement>('.header');
+    const past = ({ y }: { y: number }) => html.classList.toggle('past-hero', y > stage.current!.offsetHeight - (header?.offsetHeight ?? 64));
+    past(scrollState());
+    const offScroll = onScroll(past);
+    return () => { io.disconnect(); document.removeEventListener('visibilitychange', vis); hold.current?.kill(); offScroll(); html.classList.remove('past-hero'); };
   });
 
   const toggle = () => {
@@ -175,7 +187,7 @@ export function HeroSheet({ items, title }: { items: HeroItem[]; title: string }
                 src={`/media/${item.photo.id}`}
                 alt={i === index ? item.alt : ''}
                 fill
-                sizes="(max-width: 767px) 100vw, calc(100vw - 64px)"
+                sizes="100vw"
                 placeholder="blur"
                 blurDataURL={item.photo.blur}
                 style={{ objectPosition: `${Math.round(item.photo.focalX * 100)}% ${Math.round(item.photo.focalY * 100)}%` }}
@@ -190,10 +202,10 @@ export function HeroSheet({ items, title }: { items: HeroItem[]; title: string }
         ) : null}
         <div className="hero__rule" aria-hidden="true" />
       </div>
+      <div className="hero__center">
+        <HeroTitle title={title} />
+      </div>
       <div ref={strip} className="hero__strip">
-        <div className="hero__cell hero__cell--title">
-          <h1 className="hero__title" data-split="lines" data-intro>{title}</h1>
-        </div>
         {CELLS.map((c) => (
           <div key={c.key} className={`hero__cell ${c.className}`}>
             <span className="label">{c.label}</span>
@@ -230,5 +242,15 @@ export function HeroSheet({ items, title }: { items: HeroItem[]; title: string }
         </div>
       </div>
     </section>
+  );
+}
+
+// The tagline in two staggered lines: roman words, the two qualities in italic.
+function HeroTitle({ title }: { title: HeroTitleParts }) {
+  return (
+    <h1 className="hero__title">
+      <span className="hero__line"><span>{title.lead} <em>{title.first}</em></span></span>{' '}
+      <span className="hero__line hero__line--2"><span>and <em>{title.second}</em></span></span>
+    </h1>
   );
 }

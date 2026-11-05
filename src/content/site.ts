@@ -7,6 +7,8 @@ export const site = {
   url: (process.env.SITE_URL || 'https://kadjoe.com').replace(/\/$/, ''),
   founded: '2017',
   tagline: 'The balance of subtle luxe and unmatched quality.',
+  // The tagline as the hero sets it: roman lead, the two qualities in italic, "and" as a mono note.
+  heroTitle: { lead: 'The Balance of', first: 'Subtle Luxe', second: 'Unmatched Quality' },
   description:
     'PT Kadjoe Kreasi Indonesia designs and builds interiors in Jakarta: residential, F&B and commercial projects, credited to the studios that designed them.',
   statement:

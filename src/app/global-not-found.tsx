@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-html-link-for-pages -- rendered outside the app router: plain links, full page loads */
 import type { Metadata } from 'next';
 import { site } from '@/content/site';
-import { plexMono, switzer } from './fonts';
+import { cormorant, cormorantItalic, jost } from './fonts';
 import '@/styles/tokens.css';
 import '@/styles/base.css';
 import '@/styles/site.css';
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function GlobalNotFound() {
   return (
-    <html lang="en" className={`${switzer.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`${jost.variable} ${cormorant.variable} ${cormorantItalic.variable}`}>
       <body>
         <a className="skip-link" href="#main">Skip to content</a>
         <header className="header">
