@@ -91,14 +91,15 @@ export async function variant(id: string, width: number) {
   return file;
 }
 
-/** JPEG for the company profile PDF (react-pdf cannot read WebP). Cached like the WebP sizes. */
-export async function jpeg(id: string, width: number) {
-  const file = path.join(/*turbopackIgnore: true*/ mediaDir(id), `p${width}.jpg`);
+/** JPEG for the company profile PDF (react-pdf cannot read WebP). Cached like the WebP sizes.
+ * `fast`: the builder's preview, plain encoder at a lower quality: mozjpeg encodes several times slower. */
+export async function jpeg(id: string, width: number, fast = false) {
+  const file = path.join(/*turbopackIgnore: true*/ mediaDir(id), `p${width}${fast ? 'f' : ''}.jpg`);
   if (fs.existsSync(file)) return file;
   const src = masterPath(id);
   if (!fs.existsSync(src)) return null;
   const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
-  await sharp(src).resize({ width, withoutEnlargement: true }).jpeg({ quality: 82, mozjpeg: true }).toFile(tmp);
+  await sharp(src).resize({ width, withoutEnlargement: true }).jpeg(fast ? { quality: 72 } : { quality: 82, mozjpeg: true }).toFile(tmp);
   fs.renameSync(tmp, file);
   return file;
 }
