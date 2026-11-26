@@ -102,7 +102,7 @@ export async function importPost(m: IgMedia, parsed: ParsedCaption, intoId: stri
       location: location ? plainDashes(location) : null,
       year: year ? plainDashes(year) : null,
       service: serviceFrom(parsed.service) ?? 'Build', inHouse: parsed.inHouse, description: null,
-      status: getInstagram().autoPublish ? 'published' : 'draft', featured: false, sortDate: date,
+      status: 'published', featured: false, sortDate: date,
       designers: creditIds(parsed.designers, 'design'), photographers: creditIds(parsed.photographers, 'photo'),
     }, 'instagram');
   } else {
@@ -126,7 +126,9 @@ export async function importPost(m: IgMedia, parsed: ParsedCaption, intoId: stri
 async function ingest(m: IgMedia, shortcode: string, importSince: string | null, sum: SyncSummary, keep = false) {
   sum.seen++;
   const parsed = parseCaption(m.caption);
-  const d = decide(parsed, { timestamp: m.timestamp, hasImages: imagesOf(m).length > 0 }, { importSince, projects: candidates() });
+  let d = decide(parsed, { timestamp: m.timestamp, hasImages: imagesOf(m).length > 0 }, { importSince, projects: candidates() });
+  // "Review first": a project post waits for a person even when it matches clearly.
+  if ((d.action === 'create' || d.action === 'append') && !getInstagram().autoPublish) d = { action: 'pending', note: 'Review first' };
   const base = { shortcode, igMediaId: m.id, permalink: m.permalink, caption: m.caption ?? null, postedAt: m.timestamp, mediaType: m.media_type, parsed, media: keep ? m : null };
   if (d.action === 'skip') {
     db.insert(igPosts).values({ ...base, status: 'not_project', note: d.note }).onConflictDoNothing().run();

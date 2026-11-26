@@ -93,4 +93,17 @@ describe('/api/instagram/push', () => {
     expect(db.select().from(t.igPosts).all().find((p) => p.shortcode === 'PUSHwip1')!.status).toBe('imported');
   });
 
+  it('Review first: a clear project post waits in the inbox, and its approval publishes it', async () => {
+    const { setInstagram } = await import('@/server/settings');
+    const { approvePost } = await import('@/server/instagram/sync');
+    const { db } = await import('@/server/db/client');
+    const t = await import('@/server/db/schema');
+    setInstagram({ autoPublish: false });
+    const done = 'Client: Rumah Tinjau\nType: Residential\nLocation: Bintaro\nStatus: Completed\nService: Build';
+    expect(await (await call('POST', '', { posts: [carousel('PUSHrev1', done, '2026-11-21T03:00:00.000Z', 1, 7)] })).json()).toMatchObject({ seen: 1, imported: 0, pending: 1 });
+    expect(db.select().from(t.igPosts).all().find((p) => p.shortcode === 'PUSHrev1')).toMatchObject({ status: 'pending', note: 'Review first' });
+    expect((await approvePost('PUSHrev1', null)).added).toBe(1);
+    expect(db.select().from(t.projects).all().find((p) => p.name === 'Rumah Tinjau')!.status).toBe('published');
+    setInstagram({ autoPublish: true });
+  });
 });
