@@ -122,6 +122,27 @@ export async function importPost(m: IgMedia, parsed: ParsedCaption, intoId: stri
   return { projectId, added };
 }
 
+/** One new post: skipped, held in the inbox, or imported. `keep` stores the post for a later approval. */
+async function ingest(m: IgMedia, shortcode: string, importSince: string | null, sum: SyncSummary, keep = false) {
+  sum.seen++;
+  const parsed = parseCaption(m.caption);
+  const d = decide(parsed, { timestamp: m.timestamp, hasImages: imagesOf(m).length > 0 }, { importSince, projects: candidates() });
+  const base = { shortcode, igMediaId: m.id, permalink: m.permalink, caption: m.caption ?? null, postedAt: m.timestamp, mediaType: m.media_type, parsed, media: keep ? m : null };
+  if (d.action === 'skip') {
+    db.insert(igPosts).values({ ...base, status: 'not_project', note: d.note }).onConflictDoNothing().run();
+  } else if (d.action === 'pending') {
+    db.insert(igPosts).values({ ...base, status: 'pending', note: d.note }).onConflictDoNothing().run();
+    sum.pending++;
+  } else {
+    try {
+      await importPost(m, parsed, d.action === 'append' ? d.projectId : null);
+      sum.imported++;
+    } catch (e) {
+      db.insert(igPosts).values({ ...base, status: 'error', note: e instanceof Error ? e.message.slice(0, 200) : 'Import failed' }).onConflictDoNothing().run();
+    }
+  }
+}
+
 let running: Promise<SyncSummary> | null = null;
 export type SyncSummary = { ok: boolean; seen: number; imported: number; pending: number; message: string };
 
@@ -153,23 +174,7 @@ async function doSync(trigger: 'schedule' | 'manual'): Promise<SyncSummary> {
         if (!shortcode) continue;
         if (known.has(shortcode)) { sawKnown = true; continue; }
         known.add(shortcode);
-        sum.seen++;
-        const parsed = parseCaption(m.caption);
-        const d = decide(parsed, { timestamp: m.timestamp, hasImages: imagesOf(m).length > 0 }, { importSince: state.importSince, projects: candidates() });
-        const base = { shortcode, igMediaId: m.id, permalink: m.permalink, caption: m.caption ?? null, postedAt: m.timestamp, mediaType: m.media_type, parsed };
-        if (d.action === 'skip') {
-          db.insert(igPosts).values({ ...base, status: 'not_project', note: d.note }).onConflictDoNothing().run();
-        } else if (d.action === 'pending') {
-          db.insert(igPosts).values({ ...base, status: 'pending', note: d.note }).onConflictDoNothing().run();
-          sum.pending++;
-        } else {
-          try {
-            await importPost(m, parsed, d.action === 'append' ? d.projectId : null);
-            sum.imported++;
-          } catch (e) {
-            db.insert(igPosts).values({ ...base, status: 'error', note: e instanceof Error ? e.message.slice(0, 200) : 'Import failed' }).onConflictDoNothing().run();
-          }
-        }
+        await ingest(m, shortcode, state.importSince, sum);
       }
       after = res.paging?.next ? res.paging.cursors?.after : undefined;
       if (sawKnown || !after) break;
@@ -201,6 +206,11 @@ export async function maybeRefresh() {
 export async function approvePost(shortcode: string, intoId: string | null, overrides: Parameters<typeof importPost>[3] = {}) {
   const post = db.select().from(igPosts).where(eq(igPosts.shortcode, shortcode)).get();
   const token = getInstagram().token;
+  if (!token && post?.media) {
+    // A pushed post: its links come from the pusher's latest run and expire after a few days.
+    const m = post.media as IgMedia;
+    return importPost(m, parseCaption(m.caption), intoId, overrides);
+  }
   if (!post?.igMediaId) throw new Error('This post has no Instagram id; open it on Instagram and upload the photographs instead');
   if (!token) throw new Error('Instagram is not connected');
   const fresh = await getMedia(token, post.igMediaId); // image links expire, ask again
@@ -219,4 +229,32 @@ export function inbox() {
 export function recentPosts(limit = 30) {
   return db.select({ post: igPosts, projectName: projects.name }).from(igPosts).leftJoin(projects, eq(projects.id, igPosts.projectId))
     .where(inArray(igPosts.status, ['imported', 'ignored', 'not_project'])).orderBy(desc(igPosts.postedAt)).limit(limit).all();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Push: a computer on a home or office connection reads the public profile and sends the posts here.
+// Instagram sends server addresses to its login page, so this server cannot read the profile itself.
+
+/** Of the codes the pusher sees, the ones it must send: new posts, and inbox posts (for fresh photo links). */
+export function wantedCodes(codes: string[]) {
+  const rows = codes.length ? db.select({ s: igPosts.shortcode, status: igPosts.status }).from(igPosts).where(inArray(igPosts.shortcode, codes)).all() : [];
+  const status = new Map(rows.map((r) => [r.s, r.status]));
+  return codes.filter((c) => !status.has(c) || status.get(c) === 'pending' || status.get(c) === 'error');
+}
+
+export async function pushPosts(list: IgMedia[]): Promise<SyncSummary> {
+  const state = getInstagram();
+  const runId = db.insert(igSyncRuns).values({ startedAt: new Date().toISOString(), trigger: 'push' }).returning({ id: igSyncRuns.id }).get().id;
+  const sum: SyncSummary = { ok: true, seen: 0, imported: 0, pending: 0, message: '' };
+  for (const m of list) {
+    const shortcode = shortcodeOf(m);
+    if (!shortcode) continue;
+    const row = db.select({ status: igPosts.status }).from(igPosts).where(eq(igPosts.shortcode, shortcode)).get();
+    if (!row) await ingest(m, shortcode, state.importSince, sum, true);
+    else if (row.status === 'pending' || row.status === 'error') db.update(igPosts).set({ media: m }).where(eq(igPosts.shortcode, shortcode)).run();
+  }
+  sum.message = `${sum.seen} new post${sum.seen === 1 ? '' : 's'}`;
+  setInstagram({ lastSyncAt: new Date().toISOString(), lastError: null });
+  db.update(igSyncRuns).set({ finishedAt: new Date().toISOString(), ok: true, seen: sum.seen, imported: sum.imported, pending: sum.pending, message: sum.message }).where(eq(igSyncRuns.id, runId)).run();
+  return sum;
 }
