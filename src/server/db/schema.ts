@@ -124,6 +124,8 @@ export const igPosts = sqliteTable('ig_posts', {
   // Why a post waits for a person (pending) or was skipped.
   note: text('note'),
   parsed: text('parsed', { mode: 'json' }),
+  // The post as a pusher sent it (no API token to ask again): its photo links serve a later approval.
+  media: text('media', { mode: 'json' }),
   fetchedAt: created(),
   importedAt: text('imported_at'),
 }, (t) => [index('ig_posts_status').on(t.status, t.postedAt)]);
@@ -132,7 +134,7 @@ export const igSyncRuns = sqliteTable('ig_sync_runs', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   startedAt: text('started_at').notNull(),
   finishedAt: text('finished_at'),
-  trigger: text('trigger', { enum: ['schedule', 'manual'] }).notNull(),
+  trigger: text('trigger', { enum: ['schedule', 'manual', 'push'] }).notNull(),
   ok: integer('ok', { mode: 'boolean' }),
   seen: integer('seen').notNull().default(0),
   imported: integer('imported').notNull().default(0),

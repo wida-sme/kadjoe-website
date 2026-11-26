@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Daily Instagram push from this Mac. Install: see "Instagram push from a Mac" in README.md.
+     __HOME__ is replaced at install. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.kadjoe.ig-push</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>__HOME__/.local/share/kadjoe/ig-push.mjs</string>
+  </array>
+  <!-- Once a day; a time missed while the Mac sleeps runs when it wakes. -->
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>30</integer></dict>
+  <key>StandardOutPath</key><string>__HOME__/Library/Logs/kadjoe-ig-push.log</string>
+  <key>StandardErrorPath</key><string>__HOME__/Library/Logs/kadjoe-ig-push.log</string>
+</dict>
+</plist>

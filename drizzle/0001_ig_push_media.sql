@@ -1,0 +1,1 @@
+ALTER TABLE `ig_posts` ADD `media` text;

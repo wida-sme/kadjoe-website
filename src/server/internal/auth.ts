@@ -4,8 +4,8 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 const digest = (s: string) => createHash('sha256').update(s).digest();
 
 /** Compares sha256 digests so length differences do not leak. An unset token never matches. */
-export function checkToken(req: Request): boolean {
-  const expected = process.env.SITE_ADMIN_TOKEN ?? '';
+export function checkToken(req: Request, env = 'SITE_ADMIN_TOKEN'): boolean {
+  const expected = process.env[env] ?? '';
   if (!expected) return false;
   const m = /^Bearer (.*)$/.exec(req.headers.get('authorization') ?? '');
   if (!m) return false;

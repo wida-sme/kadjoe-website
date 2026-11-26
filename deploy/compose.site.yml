@@ -21,6 +21,8 @@ services:
       FINANCE_URL: https://${DOMAIN:?set DOMAIN in .env}
       IG_APP_ID: ${IG_APP_ID:-}
       IG_APP_SECRET: ${IG_APP_SECRET:-}
+      # scripts/ig-push.mjs on a Mac sends posts with this token; unset = the push door is closed.
+      IG_PUSH_TOKEN: ${IG_PUSH_TOKEN:-}
     volumes:
       - ${KADJOE_SITE_HOST_DATA:-/srv/kadjoe/site-data}:/data
     networks: [web]

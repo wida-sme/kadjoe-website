@@ -8,6 +8,13 @@
       "when": 1792519371799,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1795664051284,
+      "tag": "0001_ig_push_media",
+      "breakpoints": true
     }
   ]
 }

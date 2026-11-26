@@ -90,6 +90,30 @@ What it needs, once:
 
 Nobody gives the site the Instagram password.
 
+### Instagram push from a Mac (no Meta app)
+
+Instagram shows its public profile (the latest 12 posts) and post pages to a browser on a home or office
+connection, but sends the server's address to its login page. So a Mac reads the profile in headless Chrome
+once a day and sends the new posts to `POST /api/instagram/push` (`scripts/ig-push.mjs`; no login, no packages).
+The same rules as above decide each post; pushed posts show as `push` under Website > Instagram > Pengecekan.
+A missed day is fine while Kadjoe posts fewer than 12 times between two runs.
+
+On the server: set `IG_PUSH_TOKEN` in `/srv/kadjoe/.env` (`openssl rand -base64 32`) and restart `site`.
+On the Mac (needs Google Chrome and Homebrew's Node):
+
+```bash
+mkdir -p ~/.local/share/kadjoe ~/.config/kadjoe
+cp scripts/ig-push.mjs ~/.local/share/kadjoe/
+(umask 077; printf 'IG_PUSH_URL=https://<site>/api/instagram/push\nIG_PUSH_TOKEN=<token>\n' > ~/.config/kadjoe/ig-push.env)
+node ~/.local/share/kadjoe/ig-push.mjs --dry
+sed "s|__HOME__|$HOME|g" deploy/mac/com.kadjoe.ig-push.plist > ~/Library/LaunchAgents/com.kadjoe.ig-push.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.kadjoe.ig-push.plist
+```
+
+The script lives outside `~/Documents` because launchd jobs may not read that folder. It runs at 09:30, or
+when the Mac wakes after that; the log is `~/Library/Logs/kadjoe-ig-push.log`. To move to another Mac, repeat
+the Mac steps there and `launchctl bootout gui/$(id -u)/com.kadjoe.ig-push` on the old one.
+
 ## Deploy
 
 The image is built like the finance app's (`Dockerfile`, Node 24, runs as `node`, data in `/data`) and deployed
