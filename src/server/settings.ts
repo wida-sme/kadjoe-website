@@ -44,6 +44,7 @@ export const instagramSchema = z.object({
   // Posts older than this were handled by the legacy import; they go to the inbox, never straight
   // onto the site.
   importSince: z.string().nullable().default(null),
+  // false = "Review first": every new project post waits in the inbox; true = it goes live by itself.
   autoPublish: z.boolean().default(true),
   lastSyncAt: z.string().nullable().default(null),
   lastError: z.string().nullable().default(null),
